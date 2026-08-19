@@ -1,5 +1,7 @@
 import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken"
+import { sendEmail } from "../services/mail.service.js";
+import { emailHtml, renderVerificationPage } from "../views/auth.view.js";
 
 
 
@@ -21,6 +23,20 @@ export const userRegisterController = async (req, res) =>{
 
     // putting the data of the user onto the database
     const user = await userModel.create({username, email, password});
+
+    
+    const emailVerificationToken = jwt.sign({
+        email: user.email
+    }, process.env.JWT_SECRET)
+
+
+    // sending email to the given email address
+    await sendEmail({
+        to: email,
+        subject: "Welcome to Perplexity!",
+        html: emailHtml({username, emailVerificationToken})
+    })
+
 
     res.status(201).json({
         message: "User registered successfully.",
@@ -100,3 +116,50 @@ export const getMeController = async (req, res) =>{
         user
     })
 }
+
+
+export async function verifyEmail(req, res){
+    // extracting the parameters sent in the url
+    const {token} = req.query;
+
+    try{
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await userModel.findOne({email: decoded.email});
+
+        if(!user){
+            return res.status(400).json({
+                message: "Invalid Token",
+                success: false,
+                err: "User not Found"
+            })
+        }
+
+        if(user.verified === true){
+            return res.send(renderVerificationPage({
+                eyebrow: "Account already active",
+                title: "You’re already verified.",
+                message: "Your email address has already been confirmed. You can continue straight to your Perplexity account.",
+                icon: "✓"
+            }))
+        }
+
+        user.verified = true;
+
+        await user.save();
+
+        return res.send(renderVerificationPage({
+            eyebrow: "Email confirmed",
+            title: "You’re all set.",
+            message: "Your email has been verified successfully. Your Perplexity workspace is ready when you are.",
+            icon: "✓"
+        }))
+        
+    }catch(err){
+        return res.status(400).json({
+            message: "Invalid or expired Token",
+            success: false,
+            err: err.message
+        })
+    }
+}
+

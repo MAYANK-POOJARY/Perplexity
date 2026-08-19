@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getMeController, userLoginController, userRegisterController } from "../controllers/auth.controllers.js";
+import { getMeController, userLoginController, userRegisterController, verifyEmail } from "../controllers/auth.controllers.js";
 import { loginValidator, registerValidator } from "../validator/auth.validator.js";
 import { authUser } from "../middleware/auth.middleware.js";
 
@@ -13,6 +13,9 @@ authRouter.post("/register", registerValidator, userRegisterController);
 authRouter.post("/login", loginValidator, userLoginController);
 
 // getme route to get user data
-authRouter.get('/get-me', authUser ,getMeController)
+authRouter.get('/get-me', authUser ,getMeController);
+
+// for email verification
+authRouter.get('/verify-email', verifyEmail)
 
 export default authRouter
