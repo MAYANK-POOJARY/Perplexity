@@ -2,6 +2,7 @@ import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken"
 import { sendEmail } from "../services/mail.service.js";
 import { emailHtml, renderVerificationPage } from "../views/auth.view.js";
+import config from "../config/config.js";
 
 
 
@@ -27,7 +28,7 @@ export const userRegisterController = async (req, res) =>{
     
     const emailVerificationToken = jwt.sign({
         email: user.email
-    }, process.env.JWT_SECRET)
+    }, config.JWT_SECRET)
 
 
     // sending email to the given email address
@@ -79,7 +80,7 @@ export const userLoginController = async (req, res) => {
     const token = jwt.sign({
         id: user._id,
         username: user.username
-    }, process.env.JWT_SECRET, {expiresIn: '7d'})
+    }, config.JWT_SECRET, {expiresIn: '7d'})
 
     // setting the token in the cookies
     res.cookie("token", token);

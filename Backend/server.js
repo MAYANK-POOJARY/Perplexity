@@ -1,4 +1,3 @@
-import "dotenv/config"
 import app from "./src/app.js"
 import connectoDB from "./src/config/database.js"
 
