@@ -6,17 +6,17 @@ import Protected from '../features/auth/components/Protected'
 
 export const router = createBrowserRouter([
     {
-        path: "/",
-        element: <Protected>
-                    <Dashboard />
-                </Protected>
-    },
-    {
         path: '/login',
         element: <Login />
     },
     {
         path: '/register',
         element: <Register />
+    },
+    {
+        path: "/",
+        element: <Protected>
+            <Dashboard />
+        </Protected>
     }
 ])
