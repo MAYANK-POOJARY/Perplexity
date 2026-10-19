@@ -32,6 +32,10 @@ if(!process.env.GOOGLE_USER){
    throw new Error("GOOGLE_USER is not defined in environment variables")
 }
 
+if(!process.env.TAVILY_API_KEY){
+   throw new Error("TAVILY_API_KEY is not defined in environment variables")
+}
+
 const config = {
     PORT : process.env.PORT,
     GROQ_API_KEY : process.env.GROQ_API_KEY,
@@ -41,7 +45,8 @@ const config = {
     GOOGLE_CLIENT_ID : process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET : process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_REFRESH_TOKEN : process.env.GOOGLE_REFRESH_TOKEN,
-    GOOGLE_USER : process.env.GOOGLE_USER
+    GOOGLE_USER : process.env.GOOGLE_USER,
+    TAVILY_API_KEY : process.env.TAVILY_API_KEY
 }
 
 export default config;

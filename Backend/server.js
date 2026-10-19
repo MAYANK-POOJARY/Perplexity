@@ -5,7 +5,6 @@ import config from "./src/config/config.js";
 import { initSocket } from "./src/sockets/server.socket.js";
 
 
-
 const httpServer = http.createServer(app);
 initSocket(httpServer);
 
