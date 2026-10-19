@@ -1,3 +1,4 @@
+import config from "../config/config.js";
 
 export function emailHtml({username, emailVerificationToken}){
     return `

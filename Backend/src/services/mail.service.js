@@ -20,7 +20,7 @@ transporter.verify()
 
 export async function sendEmail({to, subject, html, text}){
     const mailOptions = {
-        from: process.env.GOOGLE_USER,
+        from: config.GOOGLE_USER,
         to,
         subject,
         html,
