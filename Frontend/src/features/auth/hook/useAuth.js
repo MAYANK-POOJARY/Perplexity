@@ -2,10 +2,12 @@ import { useDispatch } from "react-redux";
 import { getMe, login, register } from "../service/auth.api";
 import { setError, setLoading, setUser } from "../auth.slice";
 
+// handle the error issue part so that the error can be displayed on the page
 
 export function useAuth(){
 
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
+    
 
     async function handleRegister({username, email, password}){
         try {
@@ -25,6 +27,7 @@ export function useAuth(){
             const data = await login({email, password});
             dispatch(setUser(data.user))
         } catch (error) {
+            console.log(error)
             dispatch(setError(error.response?.data?.message || "Login Failed"))
         }finally{
             dispatch(setLoading(false))
@@ -43,9 +46,27 @@ export function useAuth(){
         }
     }
 
-    return{
+
+    async function handleLogout() {
+        try {
+            await logout()
+        } catch (error) {
+            console.error("Logout request failed", error)
+        } finally {
+            dispatch(setUser(null));
+        }
+    }
+
+
+    function clearError() {
+        dispatch(setError(null))
+    }
+
+    return {
         handleLogin,
         handleRegister,
-        handleGetMe
+        handleGetMe,
+        handleLogout,
+        clearError
     }
 }

@@ -1,23 +1,19 @@
-import React, { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
 import { useAuth } from '../hook/useAuth';
 import { useSelector } from 'react-redux';
+import { useForm } from 'react-hook-form';
 
 const Login = () => {
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
     const {handleLogin} = useAuth();
     const navigate = useNavigate()
+    const { register, handleSubmit, formState: { errors } } = useForm();
 
     const user = useSelector(state => state.auth.user)
     const loading = useSelector(state => state.auth.loading)
 
-    const submitForm = async (e) => {
-        e.preventDefault();
-
-        await handleLogin({email, password});
+    const submitForm = async (values) => {
+        await handleLogin(values);
         navigate('/')
     }
 
@@ -37,7 +33,7 @@ const Login = () => {
                         Sign in with your email and password.
                     </p>
 
-                    <form onSubmit={submitForm} className="mt-8 space-y-5">
+                    <form onSubmit={handleSubmit(submitForm)} className="mt-8 space-y-5">
                         <div>
                             <label htmlFor="email" className="mb-2 block text-sm font-medium text-zinc-200">
                                 Email
@@ -45,12 +41,21 @@ const Login = () => {
                             <input
                                 id="email"
                                 type="email"
-                                value={email}
-                                onChange={(event) => setEmail(event.target.value)}
                                 placeholder="you@example.com"
-                                required
+                                {...register('email', {
+                                    required: 'Email is required',
+                                    pattern: {
+                                        value: /^\S+@\S+\.\S+$/,
+                                        message: 'Enter a valid email address',
+                                    },
+                                })}
                                 className="w-full rounded-lg border border-zinc-700 bg-zinc-950/80 px-4 py-3 text-zinc-100 outline-none ring-0 transition focus:border-[#31b8c6] focus:shadow-[0_0_0_3px_rgba(49,184,198,0.25)]"
                             />
+                            {errors.email && (
+                                <p role="alert" className="mt-2 text-sm text-red-400">
+                                    {errors.email.message}
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -60,12 +65,17 @@ const Login = () => {
                             <input
                                 id="password"
                                 type="password"
-                                value={password}
-                                onChange={(event) => setPassword(event.target.value)}
                                 placeholder="Enter your password"
-                                required
+                                {...register('password', {
+                                    required: 'Password is required',
+                                })}
                                 className="w-full rounded-lg border border-zinc-700 bg-zinc-950/80 px-4 py-3 text-zinc-100 outline-none ring-0 transition focus:border-[#31b8c6] focus:shadow-[0_0_0_3px_rgba(49,184,198,0.25)]"
                             />
+                            {errors.password && (
+                                <p role="alert" className="mt-2 text-sm text-red-400">
+                                    {errors.password.message}
+                                </p>
+                            )}
                         </div>
 
                         <button

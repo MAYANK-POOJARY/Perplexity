@@ -10,7 +10,6 @@ const Sidebar = ({
   onSelectThread,
   onDeleteThread,
   onNewThread,
-  onLogout,
   onToggleTheme,
   isOpen = true,
   onCloseMobile,
@@ -51,7 +50,7 @@ const Sidebar = ({
         </div>
 
         {/* Bottom Actions */}
-        <SidebarFooter onLogout={onLogout} onToggleTheme={onToggleTheme} />
+        <SidebarFooter onToggleTheme={onToggleTheme} />
       </aside>
     </>
   );

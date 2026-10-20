@@ -1,14 +1,28 @@
 import { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addMessages, appendMessages, createNewChat, removeChat, removePendingMessage, resolvePendingMessage, setChats, setCurrentChatId, setError, setLoading, setThinking } from "../chat.slice";
+import { addMessages,
+    appendMessages,
+    createNewChat,
+    removeChat,
+    removePendingMessage,
+    resolvePendingMessage,
+    setChats,
+    setCurrentChatId,
+    setError,
+    setLoading,
+    setThinking } from "../chat.slice";
 import { deleteChat, getChats, getMessages, sendMessage } from "../service/chat.api";
 import { initializeSocketConnection } from "../service/chat.socket";
+
+
 
 const getErrorMessage = (error, fallback) =>
     error.response?.data?.message || error.message || fallback;
 
 export const useChat = () => {
     const dispatch = useDispatch();
+
+
     const { chats, currentChatId, isLoading, isThinking, error } = useSelector((state) => state.chat);
 
     const chatItems = useMemo(
@@ -17,7 +31,7 @@ export const useChat = () => {
     );
     const currentChat = currentChatId ? chats[currentChatId] : null;
 
-    const handleSendMessage = useCallback(async (message) => {
+     const handleSendMessage = useCallback(async (message) => {
         const isNewChat = !currentChatId;
         const previousChatId = currentChatId || `draft-${crypto.randomUUID()}`;
         const pendingMessageId = `pending-${crypto.randomUUID()}`;
