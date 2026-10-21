@@ -9,7 +9,7 @@ import config from "../config/config.js";
 // sameSite -> "none" is needed in production when frontend and backend are on different domains
 const cookieOptions = {
   httpOnly: true,
-  secure: false,
+  secure: config.IS_PRODUCTION,
   sameSite: "lax",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, same as the JWT
 };

@@ -1,10 +1,11 @@
 import { io } from "socket.io-client";
+import { API_URL } from "../../../lib/env";
 
 let socket;
 
 export const initializeSocketConnection = () => {
     if (!socket) {
-        socket = io("http://localhost:3000", {
+        socket = io(API_URL, {
             withCredentials: true,
         });
 

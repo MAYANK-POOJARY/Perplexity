@@ -81,10 +81,29 @@ function isRateLimited(userId) {
     return limited;
 }
 
+// how many past messages the AI gets to see. Older ones stay in the database, the AI just doesn't read them.
+const MAX_HISTORY_MESSAGES = 20;
+
+async function getRecentMessages(chatId) {
+    // newest first, take 20, then flip back into normal order
+    const recent = await messageModel
+        .find({ chat: chatId })
+        .sort({ createdAt: -1 })
+        .limit(MAX_HISTORY_MESSAGES);
+    recent.reverse();
+
+    // the window may start in the middle of a conversation. Some AI providers dislike a
+    // conversation that begins with the AI talking, so drop leading AI messages.
+    while (recent.length && recent[0].role === "ai") recent.shift();
+
+    return recent;
+}
+
 export async function streamMessage(socket, { message, chatId, tempId } = {}) {
     const userId = socket.data.user.id;   // set by the login check from Step 1
     let chat;
     let fullText = "";
+    const sources = [];   // links found by web searches, shown as cards under the answer
 
     // one helper to report any problem to the browser
     const fail = (text) =>
@@ -97,6 +116,7 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
     const controller = new AbortController();
     const onDisconnect = () => controller.abort();
     socket.once("disconnect", onDisconnect);
+    socket.data.abortController = controller;   // <-- new: so "chat:stop" can find it
 
     try {
         // find the existing chat, or create a new one
@@ -127,7 +147,7 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
         }
 
         // 3) stream the answer: each piece is sent to the browser immediately
-        const messages = await messageModel.find({ chat: chat._id }).sort({ createdAt: 1 });
+        const messages = await getRecentMessages(chat._id);
 
         await streamResponse(
             messages,
@@ -135,7 +155,14 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
                 fullText += token;
                 socket.emit("chat:token", { chatId: chat._id, token });
             },
-            controller.signal
+            controller.signal,
+            (found) => {
+                // keep each link once, even if the AI searches twice
+                for (const source of found) {
+                    if (!sources.some((s) => s.url === source.url)) sources.push(source);
+                }
+                socket.emit("chat:sources", { chatId: chat._id, sources });
+            }
         );
 
         if (!fullText.trim()) throw new Error("The AI returned an empty response");
@@ -145,21 +172,27 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
             chat: chat._id,
             content: fullText,
             role: "ai",
+            sources,
         });
+
         await chatModel.updateOne({ _id: chat._id }, { $set: { updatedAt: new Date() } });
 
         socket.emit("chat:done", { tempId, chatId: chat._id, aiMessage });
     } catch (error) {
         if (controller.signal.aborted) {
-            // the user left: keep whatever was generated so far
+            // Stop button (socket still open) or closed tab (socket gone): keep what was written so far
             if (chat && fullText.trim()) {
-                await messageModel.create({ chat: chat._id, content: fullText, role: "ai" });
+                await messageModel.create({ chat: chat._id, content: fullText, role: "ai", sources });
+                await chatModel.updateOne({ _id: chat._id }, { $set: { updatedAt: new Date() } });
             }
+            // tell the browser the answer ended early (does nothing if the browser is gone)
+            socket.emit("chat:stopped", { tempId });
             return;
         }
         console.error("Streaming failed:", error);
         fail("Something went wrong while generating the response. Please try again.");
     } finally {
-        socket.off("disconnect", onDisconnect);   // clean up the listener
+        socket.off("disconnect", onDisconnect);
+        if (socket.data.abortController === controller) socket.data.abortController = null;
     }
 }

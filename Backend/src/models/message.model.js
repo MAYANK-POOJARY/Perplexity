@@ -14,7 +14,12 @@ const messageSchema = new mongoose.Schema({
         type: String,
         enum:["user", "ai"],
         required: true
-    }
+    },
+    sources: [{
+        _id: false,        // we don't need a separate id for each link
+        title: String,
+        url: String
+    }]
 },{
     timestamps: true
 })

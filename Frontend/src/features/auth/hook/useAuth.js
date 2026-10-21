@@ -1,5 +1,7 @@
 import { useDispatch } from "react-redux";
-import { getMe, login, register } from "../service/auth.api";
+import { resetChat } from "../../chat/chat.slice";
+import { disconnectSocket } from "../../chat/service/chat.socket";
+import { getMe, login, register, logout } from "../service/auth.api";
 import { setError, setLoading, setUser } from "../auth.slice";
 
 // handle the error issue part so that the error can be displayed on the page
@@ -53,6 +55,9 @@ export function useAuth(){
         } catch (error) {
             console.error("Logout request failed", error)
         } finally {
+            // the socket remembers who logged in, so close it. The next login opens a fresh one.
+            disconnectSocket()
+            dispatch(resetChat())
             dispatch(setUser(null));
         }
     }

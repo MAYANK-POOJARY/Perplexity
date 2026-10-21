@@ -36,6 +36,10 @@ if(!process.env.TAVILY_API_KEY){
    throw new Error("TAVILY_API_KEY is not defined in environment variables")
 }
 
+if(!process.env.IS_PRODUCTION){
+   throw new Error("IS_PRODUCTION is not defined in environment variables")
+}
+
 const config = {
     PORT : process.env.PORT,
     GROQ_API_KEY : process.env.GROQ_API_KEY,
@@ -46,7 +50,10 @@ const config = {
     GOOGLE_CLIENT_SECRET : process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_REFRESH_TOKEN : process.env.GOOGLE_REFRESH_TOKEN,
     GOOGLE_USER : process.env.GOOGLE_USER,
-    TAVILY_API_KEY : process.env.TAVILY_API_KEY
+    TAVILY_API_KEY : process.env.TAVILY_API_KEY,
+    CLIENT_URL : process.env.CLIENT_URL || "http://localhost:5173",
+    SERVER_URL : process.env.SERVER_URL || "http://localhost:3000",
+    IS_PRODUCTION : process.env.NODE_ENV === "production"
 }
 
 export default config;

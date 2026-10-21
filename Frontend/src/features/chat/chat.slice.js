@@ -122,6 +122,12 @@ const chatSlice = createSlice({
             const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
             if (target) target.content += token
         },
+        // links found by the search arrived: attach them to the message that is still streaming
+        setSources: (state, action) => {
+            const { chatId, sources } = action.payload
+            const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
+            if (target) target.sources = sources
+        },
         // answer finished: stop the cursor and use the final saved text
         finishStreaming: (state, action) => {
             const { chatId, content } = action.payload
@@ -147,6 +153,15 @@ const chatSlice = createSlice({
             const { chatId, title } = action.payload
             if (state.chats[chatId]) state.chats[chatId].title = title
         },
+        // wipe everything chat-related (used on logout so the next user starts clean)
+        resetChat: (state) => {
+            state.chats = {}
+            state.currentChatId = null
+            state.isLoading = false
+            state.isThinking = false
+            state.isStreaming = false
+            state.error = null
+        },
     }
 })
 
@@ -165,8 +180,10 @@ export const {
 
     setStreaming,          // <-- new
     appendToken,           // <-- new
+    setSources,
     finishStreaming,       // <-- new
     failStreaming,         // <-- new
     updateChatTitle, 
+    resetChat
 } = chatSlice.actions
 export default chatSlice.reducer

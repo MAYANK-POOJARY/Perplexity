@@ -20,8 +20,10 @@ const MessageList = ({ messages = [], isThinking = false }) => {
           return <UserMessage key={msg.id} content={msg.content} />;
         }
         // empty streaming bubble: the bouncing dots below are shown instead
-        if (msg.isStreaming && !msg.content) return null;
+        if (msg.isStreaming && !msg.content && !msg.sources?.length) return null;
+
         return <AssistantMessage key={msg.id} message={msg} />;
+
       })}
 
       {/* Thinking state indicator */}

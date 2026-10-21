@@ -8,7 +8,7 @@ import { streamMessage } from "../controllers/chat.controllers.js";
 export function initSocket(httpServer) {
     const io = new Server(httpServer, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: config.CLIENT_URL,
             credentials: true,
         }
     })
@@ -36,6 +36,7 @@ export function initSocket(httpServer) {
 
         // the browser says "chat:send" -> we stream the answer back as "chat:token" events
         socket.on("chat:send", (payload) => streamMessage(socket, payload))
+        socket.on("chat:stop", () => socket.data.abortController?.abort())
 
         socket.on("disconnect", () => {
             console.log("A user disconnected: " + socket.id)

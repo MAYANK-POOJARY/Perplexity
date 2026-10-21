@@ -22,16 +22,12 @@ const Dashboard = () => {
     handleSendMessage,
     handleGetChats,
     handleDeleteChat,
+    handleStopGeneration
   } = useChat();
 
   const handleToggleTheme = () => {
     // Theme toggle indicator / action
     console.log('Theme toggle clicked');
-  };
-
-  const handleLogout = () => {
-    // Logout action
-    console.log('Logout clicked');
   };
 
   useEffect(() => {
@@ -54,7 +50,6 @@ const Dashboard = () => {
           setIsSidebarOpen(false);
         }}
         onToggleTheme={handleToggleTheme}
-        onLogout={handleLogout}
         isOpen={isSidebarOpen}
         onCloseMobile={() => setIsSidebarOpen(false)}
       />
@@ -95,6 +90,7 @@ const Dashboard = () => {
         {/* Bottom Floating Input Bar */}
         <ChatInput
           onSendMessage={handleSendMessage}
+          onStop={handleStopGeneration}
           disabled={isThinking || isStreaming}
         />
       </main>

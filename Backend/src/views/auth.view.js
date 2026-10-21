@@ -8,7 +8,7 @@ export function emailHtml({username, emailVerificationToken}){
                     <h1 style="margin:0;color:#17202a;font-size:26px;font-weight:700;line-height:1.25;">Verify your email</h1>
                     <p style="margin:16px 0 0;color:#667587;font-size:15px;line-height:1.6;">Hi ${username}, thanks for creating your Perplexity account. Please confirm your email address to continue.</p>
                     <p style="margin:28px 0;text-align:center;">
-                        <a href="http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#3d9bea;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">Verify email</a>
+                        <a href="${config.SERVER_URL}/api/auth/verify-email?token=${emailVerificationToken}" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#3d9bea;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">Verify email</a>
                     </p>
                     <p style="margin:0;color:#9aa6b2;font-size:12px;line-height:1.5;">If you did not create this account, you can ignore this email.</p>
                 </div>
@@ -48,7 +48,7 @@ export function renderVerificationPage({eyebrow, title, message, icon}){
         <p class="eyebrow">${eyebrow}</p>
         <h1>${title}</h1>
         <p>${message}</p>
-        <a href="http://localhost:5173/login">Continue to Perplexity <span aria-hidden="true">&nbsp;→</span></a>
+        <a href="${config.CLIENT_URL}/login">Continue to Perplexity <span aria-hidden="true">&nbsp;→</span></a>
         <small>You can safely close this window after continuing.</small>
     </main>
 </body>

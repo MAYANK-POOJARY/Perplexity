@@ -15,7 +15,8 @@ import { addMessages,
     appendToken,
     finishStreaming,
     failStreaming,
-    updateChatTitle  } from "../chat.slice";
+    updateChatTitle,
+    setSources  } from "../chat.slice";
 import { deleteChat, getChats, getMessages } from "../service/chat.api";
 import { getSocket, initializeSocketConnection } from "../service/chat.socket";
 
@@ -109,7 +110,18 @@ export const useChat = () => {
             finish();
         };
 
+        // the user pressed Stop: keep the partial answer (or remove the empty bubble) and unlock the input
+        const onStopped = ({ tempId }) => {
+            const pending = pendingRef.current[tempId];
+            if (!pending) return;
+            if (pending.created) dispatch(failStreaming({ chatId: pending.chatId }));
+            delete pendingRef.current[tempId];
+            finish();
+        };
+
         const onTitle = ({ chatId, title }) => dispatch(updateChatTitle({ chatId, title }));
+
+        const onSources = ({ chatId, sources }) => dispatch(setSources({ chatId, sources }));
 
         const onError = ({ tempId, message }) => abandon(tempId, message || "Something went wrong.");
 
@@ -124,6 +136,8 @@ export const useChat = () => {
         socket.on("chat:title", onTitle);
         socket.on("chat:error", onError);
         socket.on("disconnect", onDisconnect);
+        socket.on("chat:stopped", onStopped);
+        socket.on("chat:sources", onSources);
 
         // cleanup: remove our listeners so they never get registered twice
         return () => {
@@ -133,6 +147,8 @@ export const useChat = () => {
             socket.off("chat:title", onTitle);
             socket.off("chat:error", onError);
             socket.off("disconnect", onDisconnect);
+            socket.off("chat:stopped", onStopped);
+            socket.off("chat:sources", onSources);
         };
     }, [dispatch]);
 
@@ -174,6 +190,10 @@ export const useChat = () => {
         });
         return true;
     }, [currentChatId, dispatch]);
+
+    const handleStopGeneration = useCallback(() => {
+        getSocket()?.emit("chat:stop");
+    }, []);
 
     const handleGetChats = useCallback(async () => {
         dispatch(setLoading(true));
@@ -221,6 +241,7 @@ export const useChat = () => {
                     id: message._id,
                     content: message.content,
                     role: message.role,
+                    sources: message.sources,
                 })),
             }));
         } catch (requestError) {
@@ -259,5 +280,6 @@ export const useChat = () => {
         handleSelectThread: handleOpenChat,
         handleNewThread: handleNewChat,
         handleDeleteChat,
+        handleStopGeneration
     };
 };

@@ -81,13 +81,28 @@ function parseArgs(args) {
     }
 }
 
+// pulls { title, url } out of the raw Tavily search result
+function extractSources(searchResult) {
+    try {
+        const { results = [] } = JSON.parse(searchResult)
+        return results
+            // only real web links: never let a "javascript:..." URL reach a clickable link in the browser
+            .filter((r) => typeof r.url === "string" && /^https?:\/\//.test(r.url))
+            .map((r) => ({ title: r.title || r.url, url: r.url }))
+    } catch {
+        return []   // a failed search ("The search failed: ...") is plain text, so there are no sources
+    }
+}
+
 
 // NEW way: calls onToken(text) for every small piece of the answer
-export async function streamResponse(messages, onToken, signal) {
+export async function streamResponse(messages, onToken, signal, onSources) {
     const conversation = buildMessages(messages)
     let streamedAny = false
 
     for (let step = 0; step < MAX_STEPS; step++) {
+        signal?.throwIfAborted()   // <-- new: if the user pressed Stop, quit before starting another round
+
         // on the final step the model gets NO tools, so it must write a real answer
         const isLastStep = step === MAX_STEPS - 1
         const activeModel = isLastStep ? cohereModel : modelWithTools
@@ -133,6 +148,10 @@ export async function streamResponse(messages, onToken, signal) {
             } catch (error) {
                 result = "The search failed: " + error.message
             }
+
+            const sources = extractSources(result)
+            if (sources.length) onSources?.(sources)   // <-- new: tell the caller right away
+
             conversation.push(new ToolMessage({ content: result, tool_call_id: call.id }))
         }
         // loop again: the model reads the search results and writes the real answer
