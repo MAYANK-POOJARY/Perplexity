@@ -23,6 +23,10 @@ const AssistantMessage = ({ message }) => {
           >
             {content || ''}
           </ReactMarkdown>
+          {/* blinking cursor while the answer is still arriving */}
+          {message.isStreaming && (
+            <span className="inline-block h-4 w-1.5 rounded-sm bg-[#8ba0fa] animate-pulse" />
+          )}
         </div>
 
       </div>

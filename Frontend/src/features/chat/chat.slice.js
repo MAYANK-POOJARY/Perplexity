@@ -8,6 +8,7 @@ const chatSlice = createSlice({
         currentChatId: null,
         isLoading: false,
         isThinking: false,
+        isStreaming: false,
         error: null,
     },
     reducers: {
@@ -110,6 +111,42 @@ const chatSlice = createSlice({
         setError: (state, action) => {
             state.error = action.payload
         },
+
+        // new 
+        setStreaming: (state, action) => {
+            state.isStreaming = action.payload
+        },
+        // a new piece of the answer arrived: glue it to the message that is still streaming
+        appendToken: (state, action) => {
+            const { chatId, token } = action.payload
+            const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
+            if (target) target.content += token
+        },
+        // answer finished: stop the cursor and use the final saved text
+        finishStreaming: (state, action) => {
+            const { chatId, content } = action.payload
+            const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
+            if (!target) return
+            target.content = content
+            target.isStreaming = false
+        },
+        // something broke: keep the partial answer, or remove the empty bubble
+        failStreaming: (state, action) => {
+            const chat = state.chats[action.payload.chatId]
+            if (!chat) return
+            const index = chat.messages.findLastIndex((m) => m.isStreaming)
+            if (index === -1) return
+            if (chat.messages[index].content) {
+                chat.messages[index].isStreaming = false
+            } else {
+                chat.messages.splice(index, 1)
+            }
+        },
+        // the generated title arrived
+        updateChatTitle: (state, action) => {
+            const { chatId, title } = action.payload
+            if (state.chats[chatId]) state.chats[chatId].title = title
+        },
     }
 })
 
@@ -125,5 +162,11 @@ export const {
     resolvePendingMessage,
     removePendingMessage,
     removeChat,
+
+    setStreaming,          // <-- new
+    appendToken,           // <-- new
+    finishStreaming,       // <-- new
+    failStreaming,         // <-- new
+    updateChatTitle, 
 } = chatSlice.actions
 export default chatSlice.reducer

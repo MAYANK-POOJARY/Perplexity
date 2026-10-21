@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import UserMessage from './UserMessage';
 import AssistantMessage from './AssistantMessage';
 import { Sparkles } from 'lucide-react';
@@ -6,9 +6,12 @@ import { Sparkles } from 'lucide-react';
 const MessageList = ({ messages = [], isThinking = false }) => {
   const bottomRef = useRef(null);
 
+  const isStreaming = messages[messages.length - 1]?.isStreaming;
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isThinking]);
+    // "smooth" scrolling fights with the constant updates while streaming, so jump instantly then
+    bottomRef.current?.scrollIntoView({ behavior: isStreaming ? 'auto' : 'smooth' });
+  }, [messages, isThinking, isStreaming]);
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto px-4 md:px-6 pb-28">
@@ -16,6 +19,8 @@ const MessageList = ({ messages = [], isThinking = false }) => {
         if (msg.role === 'user') {
           return <UserMessage key={msg.id} content={msg.content} />;
         }
+        // empty streaming bubble: the bouncing dots below are shown instead
+        if (msg.isStreaming && !msg.content) return null;
         return <AssistantMessage key={msg.id} message={msg} />;
       })}
 

@@ -16,12 +16,12 @@ const Dashboard = () => {
     isLoading,
     isThinking,
     error,
+    isStreaming,
     handleSelectThread,
     handleNewThread,
     handleSendMessage,
     handleGetChats,
     handleDeleteChat,
-    initializeSocketConnection
   } = useChat();
 
   const handleToggleTheme = () => {
@@ -36,8 +36,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     handleGetChats();
-    initializeSocketConnection();
-  }, [handleGetChats, initializeSocketConnection])
+  }, [handleGetChats])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#0f1115] text-[#e2e8f0] font-sans">
@@ -96,7 +95,7 @@ const Dashboard = () => {
         {/* Bottom Floating Input Bar */}
         <ChatInput
           onSendMessage={handleSendMessage}
-          disabled={isThinking}
+          disabled={isThinking || isStreaming}
         />
       </main>
     </div>

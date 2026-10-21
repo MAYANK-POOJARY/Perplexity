@@ -1,10 +1,5 @@
 import axiosInstance from "../../../lib/AxiosInstance"
 
-export const sendMessage = async ({ message, chatId }) => {
-    const response = await axiosInstance.post("/chats/message", { message, chatId })
-    return response.data
-}
-
 export const getChats = async () => {
     const response = await axiosInstance.get("/chats")
     return response.data

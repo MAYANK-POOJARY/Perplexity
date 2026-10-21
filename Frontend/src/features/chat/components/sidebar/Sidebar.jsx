@@ -26,7 +26,7 @@ const Sidebar = ({
 
       {/* Main Sidebar Container */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-40 w-64 md:w-[260px] bg-[#101318] border-r border-[#191f2a] flex flex-col justify-between p-3.5 transition-transform duration-200 ease-in-out shrink-0 select-none ${
+        className={`fixed md:static inset-y-0 left-0 z-40 w-64 md:w-65 bg-[#101318] border-r border-[#191f2a] flex flex-col justify-between p-3.5 transition-transform duration-200 ease-in-out shrink-0 select-none ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >

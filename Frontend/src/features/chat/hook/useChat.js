@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addMessages,
     appendMessages,
@@ -10,9 +10,14 @@ import { addMessages,
     setCurrentChatId,
     setError,
     setLoading,
-    setThinking } from "../chat.slice";
-import { deleteChat, getChats, getMessages, sendMessage } from "../service/chat.api";
-import { initializeSocketConnection } from "../service/chat.socket";
+    setThinking,
+    setStreaming,
+    appendToken,
+    finishStreaming,
+    failStreaming,
+    updateChatTitle  } from "../chat.slice";
+import { deleteChat, getChats, getMessages } from "../service/chat.api";
+import { getSocket, initializeSocketConnection } from "../service/chat.socket";
 
 
 
@@ -20,26 +25,131 @@ const getErrorMessage = (error, fallback) =>
     error.response?.data?.message || error.message || fallback;
 
 export const useChat = () => {
+
     const dispatch = useDispatch();
 
+    const { chats, currentChatId, isLoading, isThinking, isStreaming, error } = useSelector((state) => state.chat);
 
-    const { chats, currentChatId, isLoading, isThinking, error } = useSelector((state) => state.chat);
+    // remembers each message that is in flight: tempId -> its details
+    const pendingRef = useRef({});
 
     const chatItems = useMemo(
         () => Object.values(chats).sort((a, b) => new Date(b.lastUpdated) - new Date(a.lastUpdated)),
         [chats]
     );
+    
     const currentChat = currentChatId ? chats[currentChatId] : null;
 
-     const handleSendMessage = useCallback(async (message) => {
+    // ---- listen to everything the server streams back (registered once) ----
+    useEffect(() => {
+        const socket = initializeSocketConnection();
+
+        const finish = () => {
+            dispatch(setThinking(false));
+            dispatch(setStreaming(false));
+        };
+
+        // undo a failed message and show the error
+        const abandon = (tempId, text) => {
+            const pending = pendingRef.current[tempId];
+            if (!pending) return;
+
+            if (pending.created) {
+                dispatch(failStreaming({ chatId: pending.chatId }));
+            } else {
+                dispatch(removePendingMessage({
+                    chatId: pending.previousChatId,
+                    messageId: pending.pendingMessageId,
+                    removeChat: pending.isNewChat,
+                }));
+            }
+            delete pendingRef.current[tempId];
+            dispatch(setError(text));
+            finish();
+        };
+
+        // server saved our message: swap temporary ids for real ones and add an empty AI bubble
+        const onCreated = ({ tempId, chat, userMessage }) => {
+            const pending = pendingRef.current[tempId];
+            if (!pending) return;
+
+            pending.created = true;
+            pending.chatId = chat._id;
+
+            dispatch(resolvePendingMessage({
+                previousChatId: pending.previousChatId,
+                chatId: chat._id,
+                title: chat.title || "New chat",
+                lastUpdated: chat.updatedAt,
+                pendingMessageId: pending.pendingMessageId,
+                userMessage: {
+                    id: userMessage._id,
+                    content: userMessage.content,
+                    role: userMessage.role,
+                },
+                aiMessage: {
+                    id: `streaming-${tempId}`,
+                    content: "",
+                    role: "ai",
+                    isStreaming: true,
+                },
+            }));
+            dispatch(setCurrentChatId(chat._id));
+        };
+
+        // one small piece of the answer
+        const onToken = ({ chatId, token }) => {
+            dispatch(setThinking(false));   // first token: hide the bouncing dots
+            dispatch(appendToken({ chatId, token }));
+        };
+
+        const onDone = ({ tempId, chatId, aiMessage }) => {
+            dispatch(finishStreaming({ chatId, content: aiMessage.content }));
+            delete pendingRef.current[tempId];
+            finish();
+        };
+
+        const onTitle = ({ chatId, title }) => dispatch(updateChatTitle({ chatId, title }));
+
+        const onError = ({ tempId, message }) => abandon(tempId, message || "Something went wrong.");
+
+        const onDisconnect = () => {
+            Object.keys(pendingRef.current).forEach((tempId) =>
+                abandon(tempId, "Connection lost. Please try again."));
+        };
+
+        socket.on("chat:created", onCreated);
+        socket.on("chat:token", onToken);
+        socket.on("chat:done", onDone);
+        socket.on("chat:title", onTitle);
+        socket.on("chat:error", onError);
+        socket.on("disconnect", onDisconnect);
+
+        // cleanup: remove our listeners so they never get registered twice
+        return () => {
+            socket.off("chat:created", onCreated);
+            socket.off("chat:token", onToken);
+            socket.off("chat:done", onDone);
+            socket.off("chat:title", onTitle);
+            socket.off("chat:error", onError);
+            socket.off("disconnect", onDisconnect);
+        };
+    }, [dispatch]);
+
+    // ---- sending: just emit the message; the answer comes back through the listeners above ----
+    const handleSendMessage = useCallback((message) => {
+        const socket = getSocket();
+        if (!socket?.connected) {
+            dispatch(setError("Not connected to the server. Please refresh the page and try again."));
+            return false;
+        }
+
         const isNewChat = !currentChatId;
         const previousChatId = currentChatId || `draft-${crypto.randomUUID()}`;
         const pendingMessageId = `pending-${crypto.randomUUID()}`;
-        const userMessage = {
-            id: pendingMessageId,
-            content: message,
-            role: "user",
-        };
+        const tempId = crypto.randomUUID();
+
+        pendingRef.current[tempId] = { previousChatId, pendingMessageId, isNewChat, created: false, chatId: null };
 
         if (isNewChat) {
             dispatch(createNewChat({
@@ -51,48 +161,18 @@ export const useChat = () => {
         }
         dispatch(appendMessages({
             chatId: previousChatId,
-            messages: [userMessage],
+            messages: [{ id: pendingMessageId, content: message, role: "user" }],
         }));
         dispatch(setThinking(true));
+        dispatch(setStreaming(true));
         dispatch(setError(null));
 
-        try {
-            const data = await sendMessage({ message, chatId: isNewChat ? null : currentChatId });
-            if (!data.chat?._id || !data.userMessage || !data.aiMessage) {
-                throw new Error("The chat API returned an invalid message response.");
-            }
-
-            const chatId = data.chat._id;
-            dispatch(resolvePendingMessage({
-                previousChatId,
-                chatId,
-                title: data.chat.title || data.title || "New chat",
-                lastUpdated: data.chat.updatedAt,
-                pendingMessageId,
-                userMessage: {
-                    id: data.userMessage._id,
-                    content: data.userMessage.content,
-                    role: data.userMessage.role,
-                },
-                aiMessage: {
-                    id: data.aiMessage._id,
-                    content: data.aiMessage.content,
-                    role: data.aiMessage.role,
-                },
-            }));
-            dispatch(setCurrentChatId(chatId));
-            return true;
-        } catch (requestError) {
-            dispatch(removePendingMessage({
-                chatId: previousChatId,
-                messageId: pendingMessageId,
-                removeChat: isNewChat,
-            }));
-            dispatch(setError(getErrorMessage(requestError, "Failed to send your message.")));
-            return false;
-        } finally {
-            dispatch(setThinking(false));
-        }
+        socket.emit("chat:send", {
+            message,
+            chatId: isNewChat ? null : currentChatId,
+            tempId,
+        });
+        return true;
     }, [currentChatId, dispatch]);
 
     const handleGetChats = useCallback(async () => {
@@ -171,8 +251,8 @@ export const useChat = () => {
         messages: currentChat?.messages || [],
         isLoading,
         isThinking,
+        isStreaming,
         error,
-        initializeSocketConnection,
         handleSendMessage,
         handleGetChats,
         handleOpenChat,
