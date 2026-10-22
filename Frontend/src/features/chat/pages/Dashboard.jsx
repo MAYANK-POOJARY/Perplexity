@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { Menu } from 'lucide-react';
-import Sidebar from '../components/sidebar/Sidebar';
-import HeroGreeting from '../components/header/HeroGreeting';
-import MessageList from '../components/messages/MessageList';
-import ChatInput from '../components/input/ChatInput';
-import { useChat } from '../hook/useChat';
-import { useEffect } from 'react';
+import { useState } from "react";
+import { Menu } from "lucide-react";
+import Sidebar from "../components/sidebar/Sidebar";
+import HeroGreeting from "../components/header/HeroGreeting";
+import MessageList from "../components/messages/MessageList";
+import ChatInput from "../components/input/ChatInput";
+import { useChat } from "../hook/useChat";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -22,17 +22,18 @@ const Dashboard = () => {
     handleSendMessage,
     handleGetChats,
     handleDeleteChat,
-    handleStopGeneration
+    handleStopGeneration,
+    handleRegenerate,
   } = useChat();
 
   const handleToggleTheme = () => {
     // Theme toggle indicator / action
-    console.log('Theme toggle clicked');
+    console.log("Theme toggle clicked");
   };
 
   useEffect(() => {
     handleGetChats();
-  }, [handleGetChats])
+  }, [handleGetChats]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#0f1115] text-[#e2e8f0] font-sans">
@@ -64,7 +65,9 @@ const Dashboard = () => {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-semibold text-sm text-white">Lumina Intelligence</span>
+          <span className="font-semibold text-sm text-white">
+            Lumina Intelligence
+          </span>
           <div className="w-5" />
         </div>
 
@@ -80,11 +83,18 @@ const Dashboard = () => {
             </p>
           )}
           {error && (
-            <p className="mx-auto max-w-3xl px-4 text-sm text-red-400" role="alert">
+            <p
+              className="mx-auto max-w-3xl px-4 text-sm text-red-400"
+              role="alert"
+            >
               {error}
             </p>
           )}
-          <MessageList messages={messages} isThinking={isThinking} />
+          <MessageList
+            messages={messages}
+            isThinking={isThinking}
+            onRegenerate={handleRegenerate}
+          />
         </div>
 
         {/* Bottom Floating Input Bar */}

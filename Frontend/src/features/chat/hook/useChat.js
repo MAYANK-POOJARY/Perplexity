@@ -16,7 +16,8 @@ import { addMessages,
     finishStreaming,
     failStreaming,
     updateChatTitle,
-    setSources  } from "../chat.slice";
+    setSources,
+    startRegeneration  } from "../chat.slice";
 import { deleteChat, getChats, getMessages } from "../service/chat.api";
 import { getSocket, initializeSocketConnection } from "../service/chat.socket";
 
@@ -195,6 +196,35 @@ export const useChat = () => {
         getSocket()?.emit("chat:stop");
     }, []);
 
+        const handleRegenerate = useCallback(() => {
+        const socket = getSocket();
+        if (!socket?.connected) {
+            dispatch(setError("Not connected to the server. Please refresh the page and try again."));
+            return;
+        }
+        if (!currentChatId || isStreaming) return;
+
+        const tempId = crypto.randomUUID();
+        // no "chat:created" event comes back for a regenerate, so mark it as already created
+        pendingRef.current[tempId] = {
+            previousChatId: currentChatId,
+            pendingMessageId: null,
+            isNewChat: false,
+            created: true,
+            chatId: currentChatId,
+        };
+
+        dispatch(startRegeneration({
+            chatId: currentChatId,
+            aiMessage: { id: `streaming-${tempId}`, content: "", role: "ai", isStreaming: true },
+        }));
+        dispatch(setThinking(true));
+        dispatch(setStreaming(true));
+        dispatch(setError(null));
+
+        socket.emit("chat:send", { chatId: currentChatId, tempId, regenerate: true });
+    }, [currentChatId, isStreaming, dispatch]);
+
     const handleGetChats = useCallback(async () => {
         dispatch(setLoading(true));
         dispatch(setError(null));
@@ -280,6 +310,7 @@ export const useChat = () => {
         handleSelectThread: handleOpenChat,
         handleNewThread: handleNewChat,
         handleDeleteChat,
-        handleStopGeneration
+        handleStopGeneration,
+        handleRegenerate
     };
 };

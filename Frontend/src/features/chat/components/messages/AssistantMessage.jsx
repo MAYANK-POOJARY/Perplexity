@@ -2,8 +2,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Sparkles } from 'lucide-react';
 import SourceList from './SourceList';
+import MessageActions from './MessageActions';
 
-const AssistantMessage = ({ message }) => {
+const AssistantMessage = ({ message, isLast = false, onRegenerate }) => {
   const { content, sources } = message;
 
   return (
@@ -31,6 +32,13 @@ const AssistantMessage = ({ message }) => {
           )}
         </div>
 
+          {/* Copy / Regenerate: only once the answer is finished */}
+        {!message.isStreaming && content && (
+          <MessageActions
+            content={content}
+            onRegenerate={isLast ? onRegenerate : undefined}
+          />
+        )}
       </div>
     </div>
   );

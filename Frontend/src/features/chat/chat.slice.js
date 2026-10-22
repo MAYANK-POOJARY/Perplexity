@@ -122,6 +122,14 @@ const chatSlice = createSlice({
             const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
             if (target) target.content += token
         },
+        // regenerate: remove the old answer and add a new empty one that will fill up
+        startRegeneration: (state, action) => {
+            const { chatId, aiMessage } = action.payload
+            const chat = state.chats[chatId]
+            if (!chat) return
+            if (chat.messages[chat.messages.length - 1]?.role === "ai") chat.messages.pop()
+            chat.messages.push(aiMessage)
+        },
         // links found by the search arrived: attach them to the message that is still streaming
         setSources: (state, action) => {
             const { chatId, sources } = action.payload
@@ -180,6 +188,7 @@ export const {
 
     setStreaming,          // <-- new
     appendToken,           // <-- new
+    startRegeneration,
     setSources,
     finishStreaming,       // <-- new
     failStreaming,         // <-- new

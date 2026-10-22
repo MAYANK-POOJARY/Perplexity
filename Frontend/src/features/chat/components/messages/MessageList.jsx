@@ -3,7 +3,7 @@ import UserMessage from './UserMessage';
 import AssistantMessage from './AssistantMessage';
 import { Sparkles } from 'lucide-react';
 
-const MessageList = ({ messages = [], isThinking = false }) => {
+const MessageList = ({ messages = [], isThinking = false, onRegenerate}) => {
   const bottomRef = useRef(null);
 
   const isStreaming = messages[messages.length - 1]?.isStreaming;
@@ -15,15 +15,20 @@ const MessageList = ({ messages = [], isThinking = false }) => {
 
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto px-4 md:px-6 pb-28">
-      {messages.map((msg) => {
+      {messages.map((msg, index) => {
         if (msg.role === 'user') {
           return <UserMessage key={msg.id} content={msg.content} />;
         }
         // empty streaming bubble: the bouncing dots below are shown instead
         if (msg.isStreaming && !msg.content && !msg.sources?.length) return null;
-
-        return <AssistantMessage key={msg.id} message={msg} />;
-
+        return (
+          <AssistantMessage
+            key={msg.id}
+            message={msg}
+            isLast={index === messages.length - 1}
+            onRegenerate={onRegenerate}
+          />
+        );
       })}
 
       {/* Thinking state indicator */}

@@ -99,7 +99,7 @@ async function getRecentMessages(chatId) {
     return recent;
 }
 
-export async function streamMessage(socket, { message, chatId, tempId } = {}) {
+export async function streamMessage(socket, { message, chatId, tempId, regenerate } = {}) {
     const userId = socket.data.user.id;   // set by the login check from Step 1
     let chat;
     let fullText = "";
@@ -109,14 +109,15 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
     const fail = (text) =>
         socket.emit("chat:error", { tempId, chatId: chat?._id ?? chatId, message: text });
 
-    if (typeof message !== "string" || !message.trim()) return fail("Message is required");
+    if (!regenerate && (typeof message !== "string" || !message.trim())) return fail("Message is required");
+    if (regenerate && !chatId) return fail("Chat not found");
     if (isRateLimited(userId)) return fail("You're sending messages too fast. Please slow down.");
 
     // if the browser disconnects mid-answer, stop the AI call instead of wasting tokens
     const controller = new AbortController();
     const onDisconnect = () => controller.abort();
     socket.once("disconnect", onDisconnect);
-    socket.data.abortController = controller;   // <-- new: so "chat:stop" can find it
+    socket.data.abortController = controller;   // so "chat:stop" can find it
 
     try {
         // find the existing chat, or create a new one
@@ -127,23 +128,30 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
             chat = await chatModel.create({ user: userId });   // title defaults to "New Chat"
         }
 
-        const userMessage = await messageModel.create({
-            chat: chat._id,
-            content: message.trim(),
-            role: "user",
-        });
+        if (regenerate) {
+            // NEW: drop the old answer, so the AI answers the last question again
+            const last = await messageModel.findOne({ chat: chat._id }).sort({ createdAt: -1 });
+            if (!last || last.role !== "ai") return fail("Nothing to regenerate");
+            await last.deleteOne();
+        } else {
+            const userMessage = await messageModel.create({
+                chat: chat._id,
+                content: message.trim(),
+                role: "user",
+            });
 
-        // 1) tell the browser: "your message is saved, here are the real ids"
-        socket.emit("chat:created", { tempId, chat, userMessage });
+            // 1) tell the browser: "your message is saved, here are the real ids"
+            socket.emit("chat:created", { tempId, chat, userMessage });
 
-        // 2) new chat? generate the title IN PARALLEL so it doesn't delay the answer
-        if (!chatId) {
-            generateChatTitle(message)
-                .then(async (title) => {
-                    await chatModel.updateOne({ _id: chat._id }, { title });
-                    socket.emit("chat:title", { chatId: chat._id, title });
-                })
-                .catch((err) => console.error("Title generation failed:", err));
+            // 2) new chat? generate the title IN PARALLEL so it doesn't delay the answer
+            if (!chatId) {
+                generateChatTitle(message)
+                    .then(async (title) => {
+                        await chatModel.updateOne({ _id: chat._id }, { title });
+                        socket.emit("chat:title", { chatId: chat._id, title });
+                    })
+                    .catch((err) => console.error("Title generation failed:", err));
+            }
         }
 
         // 3) stream the answer: each piece is sent to the browser immediately
@@ -174,7 +182,6 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
             role: "ai",
             sources,
         });
-
         await chatModel.updateOne({ _id: chat._id }, { $set: { updatedAt: new Date() } });
 
         socket.emit("chat:done", { tempId, chatId: chat._id, aiMessage });
@@ -192,7 +199,7 @@ export async function streamMessage(socket, { message, chatId, tempId } = {}) {
         console.error("Streaming failed:", error);
         fail("Something went wrong while generating the response. Please try again.");
     } finally {
-        socket.off("disconnect", onDisconnect);
+        socket.off("disconnect", onDisconnect);   // clean up the listener
         if (socket.data.abortController === controller) socket.data.abortController = null;
     }
 }
