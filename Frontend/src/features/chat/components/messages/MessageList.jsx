@@ -16,8 +16,9 @@ const MessageList = ({ messages = [], isThinking = false, onRegenerate}) => {
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto px-4 md:px-6 pb-28">
       {messages.map((msg, index) => {
+        if (msg.isReplaced) return null;   // regenerating: the old answer stays hidden until the new one is saved
         if (msg.role === 'user') {
-          return <UserMessage key={msg.id} content={msg.content} />;
+          return <UserMessage key={msg.id} content={msg.content} attachments={msg.attachments} />;
         }
         // empty streaming bubble: the bouncing dots below are shown instead
         if (msg.isStreaming && !msg.content && !msg.sources?.length) return null;

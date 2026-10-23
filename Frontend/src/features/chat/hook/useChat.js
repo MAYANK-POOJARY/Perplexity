@@ -88,6 +88,7 @@ export const useChat = () => {
                     id: userMessage._id,
                     content: userMessage.content,
                     role: userMessage.role,
+                    attachments: userMessage.attachments,
                 },
                 aiMessage: {
                     id: `streaming-${tempId}`,
@@ -154,7 +155,7 @@ export const useChat = () => {
     }, [dispatch]);
 
     // ---- sending: just emit the message; the answer comes back through the listeners above ----
-    const handleSendMessage = useCallback((message) => {
+    const handleSendMessage = useCallback((message, attachments = []) => {
         const socket = getSocket();
         if (!socket?.connected) {
             dispatch(setError("Not connected to the server. Please refresh the page and try again."));
@@ -176,9 +177,9 @@ export const useChat = () => {
             }));
             dispatch(setCurrentChatId(previousChatId));
         }
-        dispatch(appendMessages({
+       dispatch(appendMessages({
             chatId: previousChatId,
-            messages: [{ id: pendingMessageId, content: message, role: "user" }],
+            messages: [{ id: pendingMessageId, content: message, role: "user", attachments }],
         }));
         dispatch(setThinking(true));
         dispatch(setStreaming(true));
@@ -188,6 +189,7 @@ export const useChat = () => {
             message,
             chatId: isNewChat ? null : currentChatId,
             tempId,
+            attachmentIds: attachments.map((attachment) => attachment.id),
         });
         return true;
     }, [currentChatId, dispatch]);
@@ -272,6 +274,7 @@ export const useChat = () => {
                     content: message.content,
                     role: message.role,
                     sources: message.sources,
+                    attachments: message.attachments,
                 })),
             }));
         } catch (requestError) {

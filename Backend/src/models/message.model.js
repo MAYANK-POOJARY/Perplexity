@@ -19,6 +19,10 @@ const messageSchema = new mongoose.Schema({
         _id: false,        // we don't need a separate id for each link
         title: String,
         url: String
+    }],
+    attachments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "attachment"
     }]
 },{
     timestamps: true

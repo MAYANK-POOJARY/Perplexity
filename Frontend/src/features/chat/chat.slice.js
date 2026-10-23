@@ -122,12 +122,13 @@ const chatSlice = createSlice({
             const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
             if (target) target.content += token
         },
-        // regenerate: remove the old answer and add a new empty one that will fill up
+        // regenerate: HIDE the old answer (don't delete it yet) and add a new empty one
         startRegeneration: (state, action) => {
             const { chatId, aiMessage } = action.payload
             const chat = state.chats[chatId]
             if (!chat) return
-            if (chat.messages[chat.messages.length - 1]?.role === "ai") chat.messages.pop()
+            const last = chat.messages[chat.messages.length - 1]
+            if (last?.role === "ai") last.isReplaced = true
             chat.messages.push(aiMessage)
         },
         // links found by the search arrived: attach them to the message that is still streaming
@@ -136,24 +137,35 @@ const chatSlice = createSlice({
             const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
             if (target) target.sources = sources
         },
-        // answer finished: stop the cursor and use the final saved text
+        // answer finished -> stop the cursor. We keep the same `id` on purpose so React
+        // doesn't throw away and re-create the message on screen.
         finishStreaming: (state, action) => {
             const { chatId, content } = action.payload
-            const target = state.chats[chatId]?.messages.findLast((m) => m.isStreaming)
+            const chat = state.chats[chatId]
+            const target = chat?.messages.findLast((m) => m.isStreaming)
             if (!target) return
             target.content = content
             target.isStreaming = false
+            // regenerate: the new answer is saved, so the hidden old one can go for good
+            chat.messages = chat.messages.filter((m) => !m.isReplaced)
         },
-        // something broke: keep the partial answer, or remove the empty bubble
+                // the answer ended early (error or Stop)
         failStreaming: (state, action) => {
             const chat = state.chats[action.payload.chatId]
             if (!chat) return
             const index = chat.messages.findLastIndex((m) => m.isStreaming)
             if (index === -1) return
+
             if (chat.messages[index].content) {
+                // some text was written (and saved by the server): keep it, it replaces the old answer
                 chat.messages[index].isStreaming = false
+                chat.messages = chat.messages.filter((m) => !m.isReplaced)
             } else {
+                // nothing was written: remove the empty bubble and bring the old answer back
                 chat.messages.splice(index, 1)
+                chat.messages.forEach((m) => {
+                    if (m.isReplaced) m.isReplaced = false
+                })
             }
         },
         // the generated title arrived

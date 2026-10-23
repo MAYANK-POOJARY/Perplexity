@@ -40,6 +40,14 @@ if(!process.env.IS_PRODUCTION){
    throw new Error("IS_PRODUCTION is not defined in environment variables")
 }
 
+if(!process.env.IMAGEKIT_PRIVATE_KEY){
+   throw new Error("IMAGEKIT_PRIVATE_KEY is not defined in environment variables")
+}
+
+if(!process.env.IMAGEKIT_URL_ENDPOINT){
+   throw new Error("IMAGEKIT_URL_ENDPOINT is not defined in environment variables")
+}
+
 const config = {
     PORT : process.env.PORT,
     GROQ_API_KEY : process.env.GROQ_API_KEY,
@@ -53,7 +61,9 @@ const config = {
     TAVILY_API_KEY : process.env.TAVILY_API_KEY,
     CLIENT_URL : process.env.CLIENT_URL || "http://localhost:5173",
     SERVER_URL : process.env.SERVER_URL || "http://localhost:3000",
-    IS_PRODUCTION : process.env.NODE_ENV === "production"
+    IS_PRODUCTION : process.env.NODE_ENV === "production",
+    IMAGEKIT_PRIVATE_KEY : process.env.IMAGEKIT_PRIVATE_KEY,
+    IMAGEKIT_URL_ENDPOINT : process.env.IMAGEKIT_URL_ENDPOINT,
 }
 
 export default config;
