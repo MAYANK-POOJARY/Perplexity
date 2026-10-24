@@ -25,3 +25,9 @@ export const uploadAttachments = async (files) => {
 
 // where a file can be opened (the server only lets its owner see it)
 export const getAttachmentUrl = (id) => `${API_URL}/api/chats/attachments/${id}`
+
+// the user removed a file from the input box before sending: delete it on the server too
+export const deleteAttachment = async (id) => {
+    const response = await axiosInstance.delete(`/chats/attachments/${id}`)
+    return response.data
+}

@@ -2,7 +2,7 @@ import { Router } from "express";
 import { authUser } from "../middleware/auth.middleware.js";
 import { deleteChat, getChats, getMessages } from "../controllers/chat.controllers.js";
 import { uploadFiles } from "../middleware/upload.middleware.js";
-import { uploadAttachments, getAttachmentFile } from "../controllers/attachment.controllers.js";
+import { uploadAttachments, getAttachmentFile, deleteUnsentAttachment } from "../controllers/attachment.controllers.js";
 
 const chatRouter = Router();
 
@@ -16,5 +16,7 @@ chatRouter.delete("/delete/:chatId", authUser, deleteChat);
 chatRouter.post("/attachments", authUser, uploadFiles, uploadAttachments);
 
 chatRouter.get("/attachments/:id", authUser, getAttachmentFile);
+
+chatRouter.delete("/attachments/:id", authUser, deleteUnsentAttachment);
 
 export default chatRouter;

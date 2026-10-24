@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import attachmentModel from "../models/attachment.model.js";
 import { MAX_FILES } from "../middleware/upload.middleware.js";
 import { toPublicAttachment, deleteAttachmentsOfMessages } from "./attachment.controllers.js";
+import { findRelevantExcerpts } from "../services/rag.service.js";
 
 
 export async function getChats(req, res){
@@ -123,6 +124,18 @@ function userFacingError(error) {
     return "Something went wrong while generating the response. Please try again.";
 }
 
+// Words that show a short message points back to the previous question ("and the launch date?", "when is it?")
+const FOLLOW_UP = /^(and|also|what about|how about|then|so|but|why|how come)\b|\b(it|its|that|this|those|these|they|them|he|she|his|her)\b/i;
+
+// What to look for in the long documents: the latest question, plus the one before it when the
+// latest is a short follow-up. A short message that starts a NEW topic is searched on its own.
+function buildSearchQuestion(messages) {
+    const userTexts = messages.filter((m) => m.role === "user").map((m) => m.content);
+    const latest = userTexts[userTexts.length - 1] ?? "";
+    const previous = userTexts[userTexts.length - 2];
+    return latest.length < 40 && previous && FOLLOW_UP.test(latest) ? `${previous}\n${latest}` : latest;
+}
+
 export async function streamMessage(socket, { message, chatId, tempId, regenerate, attachmentIds = [] } = {}) {
     const userId = socket.data.user.id;   // set by the login check from Step 1
     let chat;
@@ -232,6 +245,15 @@ export async function streamMessage(socket, { message, chatId, tempId, regenerat
         // 3) stream the answer: each piece is sent to the browser immediately
         const messages = await getRecentMessages(chat._id, previousAnswerId);
 
+        // long attached documents are not given to the AI whole: we find the parts that match the question
+        let documentContext = "";
+        try {
+            documentContext = await findRelevantExcerpts(chat._id, buildSearchQuestion(messages));
+        } catch (error) {
+            console.error("Document search failed:", error);
+            documentContext = "[The attached long documents could not be searched right now. Tell the user that, and do not guess what they contain.]";
+        }
+
         await streamResponse(
             messages,
             (token) => {
@@ -245,7 +267,8 @@ export async function streamMessage(socket, { message, chatId, tempId, regenerat
                     if (!sources.some((s) => s.url === source.url)) sources.push(source);
                 }
                 socket.emit("chat:sources", { chatId: chat._id, sources });
-            }
+            },
+            documentContext
         );
 
         if (!fullText.trim()) throw new Error("The AI returned an empty response");

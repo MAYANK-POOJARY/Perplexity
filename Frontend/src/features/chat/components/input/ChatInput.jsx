@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { Plus, Scan, ArrowUp, Square, Loader2 } from 'lucide-react';
 import Attachment from '../messages/Attachment';
-import { uploadAttachments } from '../../service/chat.api';
+import { uploadAttachments, deleteAttachment } from '../../service/chat.api';
 
 const MAX_FILES = 3;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB, the same limit the server enforces
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB, the same limit the server enforces
 const ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,application/pdf,.pdf,.txt,.md,.csv,.json,.js,.jsx,.ts,.tsx,.py,.java,.html,.css';
 
 const ChatInput = ({ onSendMessage, onStop, disabled = false }) => {
@@ -47,7 +47,7 @@ const ChatInput = ({ onSendMessage, onStop, disabled = false }) => {
     }
     const tooBig = files.find((file) => file.size > MAX_FILE_SIZE);
     if (tooBig) {
-      setUploadError(`"${tooBig.name}" is larger than 10 MB`);
+      setUploadError(`"${tooBig.name}" is larger than 20 MB`);
       return;
     }
 
@@ -64,10 +64,12 @@ const ChatInput = ({ onSendMessage, onStop, disabled = false }) => {
 
   const removeAttachment = (id) => {
     setAttachments((current) => current.filter((file) => file.id !== id));
+    // also delete it on the server. If this fails, the cleanup job removes the file later, so we ignore the error.
+    deleteAttachment(id).catch(() => {});
   };
 
   return (
-    <div className="fixed bottom-0 right-0 left-0 md:left-[260px] p-4 bg-gradient-to-t from-[#0f1115] via-[#0f1115]/95 to-transparent pointer-events-none z-20">
+    <div className="fixed bottom-0 right-0 left-0 md:left-65 p-4 bg-linear-to-t from-[#0f1115] via-[#0f1115]/95 to-transparent pointer-events-none z-20">
       <div className="max-w-3xl mx-auto pointer-events-auto">
         {/* Floating Input Container */}
         <form
@@ -82,7 +84,7 @@ const ChatInput = ({ onSendMessage, onStop, disabled = false }) => {
               ))}
               {uploading && (
                 <span className="flex items-center gap-1.5 text-[12px] text-[#7c8ca3]">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading...
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Reading files...
                 </span>
               )}
               {uploadError && <span className="text-[12px] text-red-400">{uploadError}</span>}

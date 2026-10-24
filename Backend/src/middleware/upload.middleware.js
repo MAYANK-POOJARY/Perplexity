@@ -3,7 +3,7 @@ import path from "path";
 export const PDF_TYPE = "application/pdf";
 
 export const MAX_FILES = 3;                       // also the most images the vision model accepts at once
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;    // 10 MB
+export const MAX_FILE_SIZE = 20 * 1024 * 1024;    // 20 MB
 
 export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
 export const TEXT_EXTENSIONS = [".txt", ".md", ".csv", ".json", ".js", ".jsx", ".ts", ".tsx", ".py", ".java", ".html", ".css"];
@@ -27,7 +27,7 @@ export function uploadFiles(req, res, next) {
         if (!error) return next();
 
         const message = error.code === "LIMIT_FILE_SIZE"
-            ? "Each file must be 10 MB or smaller"
+            ? "Each file must be 20 MB or smaller"
             : error.code === "LIMIT_UNEXPECTED_FILE"
                 ? `You can attach at most ${MAX_FILES} files`
                 : error.message;

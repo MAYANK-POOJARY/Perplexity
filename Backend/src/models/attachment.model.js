@@ -13,7 +13,11 @@ const attachmentSchema = new mongoose.Schema({
     mimeType: { type: String, required: true },
     size: { type: Number, required: true },
     kind: { type: String, enum: ["image", "document"], required: true },
-    text: { type: String, default: "" },              // documents: the extracted text the AI will read
+    // "full"   = short document: its whole text is stored in `text` and given to the AI directly
+    // "search" = long document: cut into pieces (see the chunk model) and the AI only gets the pieces that match the question
+    mode: { type: String, enum: ["full", "search"], default: "full" },
+    text: { type: String, default: "" },
+    note: { type: String, default: "" },              // e.g. "Only the first 300 of 450 pages were read"
     message: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "message",

@@ -2,11 +2,14 @@ import crypto from "crypto";
 import mongoose from "mongoose";
 import { PDFParse } from "pdf-parse";
 import attachmentModel from "../models/attachment.model.js";
+import chunkModel from "../models/chunk.model.js";
 import { IMAGE_TYPES, PDF_TYPE } from "../middleware/upload.middleware.js";
 import { uploadToImageKit, deleteFromImageKit, getSignedUrl } from "../services/imagekit.service.js";
+import { chunkPages, embedTexts, vectorToBuffer } from "../services/rag.service.js";
 
-const MAX_TEXT_CHARS = 30000;   // the AI reads at most this much of one document
-const MAX_PDF_PAGES = 30;       // we only read the first pages of a PDF
+const MAX_FULL_TEXT_CHARS = 30000;   // a document up to this size is given to the AI whole. Longer ones are searched.
+const MAX_PDF_PAGES = 300;           // the most pages we read from one PDF
+const MAX_CHUNKS = 1000;             // the most pieces we index from one document
 
 const IMAGE_EXTENSIONS = {
     "image/png": ".png",
@@ -26,14 +29,8 @@ function looksLikeImage(buffer, mimeType) {
     return false;
 }
 
-// cuts long text and TELLS the AI it was cut, so it doesn't pretend it read everything
-function limitText(text) {
-    if (text.length <= MAX_TEXT_CHARS) return text;
-    return text.slice(0, MAX_TEXT_CHARS) + "\n\n[The rest of this file was cut off because it is too long]";
-}
-
-// reads the text out of a PDF
-async function readPdfText(buffer, name) {
+// reads a PDF page by page: [{ num, text }]
+async function readPdfPages(buffer, name) {
     // every real PDF starts with "%PDF-"
     if (buffer.subarray(0, 5).toString("latin1") !== "%PDF-") {
         throw new Error(`"${name}" is not a valid PDF`);
@@ -50,14 +47,64 @@ async function readPdfText(buffer, name) {
         await parser.destroy().catch(() => {});
     }
 
-    let text = (result.text ?? "").trim();
-    if (!text) {
-        throw new Error(`"${name}" has no readable text. It may be a scan made of pictures`);
+    const pages = Array.isArray(result.pages) && result.pages.length
+        ? result.pages.map((page, i) => ({ num: page.num ?? i + 1, text: page.text ?? "" }))
+        : [{ num: null, text: result.text ?? "" }];
+
+    const note = result.total > MAX_PDF_PAGES
+        ? `Only the first ${MAX_PDF_PAGES} of ${result.total} pages were read`
+        : "";
+
+    return { pages, note };
+}
+
+// Reads a text file or PDF and decides how the AI will use it:
+//   short  -> mode "full":   the whole text is kept and given to the AI directly
+//   long   -> mode "search": cut into pieces, each piece turned into numbers (an "embedding")
+async function prepareDocument(file, isPdf) {
+    let pages;
+    let note = "";
+
+    if (isPdf) {
+        ({ pages, note } = await readPdfPages(file.buffer, file.originalname));
+    } else {
+        if (file.buffer.includes(0)) {   // a zero byte means binary data, not text
+            throw new Error(`"${file.originalname}" does not look like a text file`);
+        }
+        pages = [{ num: null, text: file.buffer.toString("utf8") }];
     }
-    if (result.total > MAX_PDF_PAGES) {
-        text += `\n\n[Only the first ${MAX_PDF_PAGES} of ${result.total} pages were read]`;
+
+    const fullText = pages.map((page) => page.text).join("\n\n").trim();
+
+    if (!fullText) {
+        throw new Error(
+            isPdf
+                ? `"${file.originalname}" has no readable text. It may be a scan made of pictures`
+                : `"${file.originalname}" is empty`
+        );
     }
-    return text;
+
+    if (fullText.length <= MAX_FULL_TEXT_CHARS) {
+        return { mode: "full", text: fullText, note, chunks: [] };
+    }
+
+    // long document: build the searchable pieces
+    let chunks = chunkPages(pages);
+
+    if (chunks.length > MAX_CHUNKS) {
+        chunks = chunks.slice(0, MAX_CHUNKS);
+        const lastPage = chunks[chunks.length - 1].page;
+        note = lastPage
+            ? `Only the first ${lastPage} pages could be searched`
+            : "Only the first part of this file could be searched";
+    }
+
+    const vectors = await embedTexts(chunks.map((chunk) => chunk.text));
+    chunks.forEach((chunk, i) => {
+        chunk.embedding = vectorToBuffer(vectors[i]);
+    });
+
+    return { mode: "search", text: "", note, chunks };
 }
 
 // what the browser is allowed to know about an attachment (never the ImageKit ids or the text)
@@ -78,25 +125,21 @@ export async function uploadAttachments(req, res) {
         return res.status(400).json({ message: "No files were uploaded", success: false });
     }
 
-    // 1) check EVERY file before anything is uploaded
+    // 1) check and read EVERY file before anything is uploaded
     let prepared;
     try {
         prepared = await Promise.all(files.map(async (file) => {
             const isImage = IMAGE_TYPES.includes(file.mimetype);
             const isPdf = file.mimetype === PDF_TYPE;
-            let text = "";
+
+            let doc = { mode: "full", text: "", note: "", chunks: [] };
 
             if (isImage) {
                 if (!looksLikeImage(file.buffer, file.mimetype)) {
                     throw new Error(`"${file.originalname}" is not a valid ${file.mimetype} image`);
                 }
-            } else if (isPdf) {
-                text = limitText(await readPdfText(file.buffer, file.originalname));
             } else {
-                if (file.buffer.includes(0)) {   // a zero byte means binary data, not text
-                    throw new Error(`"${file.originalname}" does not look like a text file`);
-                }
-                text = limitText(file.buffer.toString("utf8"));
+                doc = await prepareDocument(file, isPdf);
             }
 
             // Images and PDFs keep their real extension, so ImageKit serves them as what they are.
@@ -104,13 +147,13 @@ export async function uploadAttachments(req, res) {
             // and an uploaded .html file can never run as a web page.
             const extension = isImage ? IMAGE_EXTENSIONS[file.mimetype] : isPdf ? ".pdf" : ".txt";
 
-            return { file, isImage, text, storedName: `${crypto.randomUUID()}${extension}` };
+            return { file, isImage, doc, storedName: `${crypto.randomUUID()}${extension}` };
         }));
     } catch (error) {
-        return res.status(400).json({ message: error.message, success: false });
+        return res.status(error.httpStatus || 400).json({ message: error.message, success: false });
     }
 
-    // 2) send them to ImageKit and save a record for each
+    // 2) send them to ImageKit and save a record (and the searchable pieces) for each
     const uploadedFileIds = [];
     const savedIds = [];
 
@@ -129,10 +172,24 @@ export async function uploadAttachments(req, res) {
                 mimeType: item.file.mimetype,
                 size: item.file.size,
                 kind: item.isImage ? "image" : "document",
-                text: item.text,
+                mode: item.doc.mode,
+                text: item.doc.text,
+                note: item.doc.note,
             });
             savedIds.push(attachment._id);
             saved.push(attachment);
+
+            if (item.doc.chunks.length) {
+                await chunkModel.insertMany(
+                    item.doc.chunks.map((chunk) => ({
+                        attachment: attachment._id,
+                        index: chunk.index,
+                        page: chunk.page,
+                        text: chunk.text,
+                        embedding: chunk.embedding,
+                    }))
+                );
+            }
         }
 
         return res.status(201).json({ attachments: saved.map(toPublicAttachment) });
@@ -141,6 +198,7 @@ export async function uploadAttachments(req, res) {
 
         // all or nothing: undo what already went through
         await Promise.all(uploadedFileIds.map(deleteFromImageKit));
+        await chunkModel.deleteMany({ attachment: { $in: savedIds } });
         await attachmentModel.deleteMany({ _id: { $in: savedIds } });
 
         return res.status(502).json({ message: "Could not store the file. Please try again.", success: false });
@@ -165,10 +223,38 @@ export async function getAttachmentFile(req, res) {
     res.redirect(getSignedUrl(attachment.filePath));
 }
 
+// Removes the stored file (ImageKit) and the searchable pieces of attachments.
+// The database records themselves are removed by the caller.
+export async function removeAttachmentFiles(attachments) {
+    await Promise.all(
+        attachments.filter((attachment) => attachment.fileId).map((attachment) => deleteFromImageKit(attachment.fileId))
+    );
+    await chunkModel.deleteMany({ attachment: { $in: attachments.map((attachment) => attachment._id) } });
+}
+
+// DELETE /api/chats/attachments/:id
+// The user took a file out of the input box before sending. Only files that were NOT sent can be removed this way.
+export async function deleteUnsentAttachment(req, res) {
+    const { id } = req.params;
+
+    // one atomic step: find it AND delete it, but only if it is yours and still unsent.
+    // If the message is being sent at this very moment, this finds nothing and the file stays.
+    const attachment = mongoose.isValidObjectId(id)
+        ? await attachmentModel.findOneAndDelete({ _id: id, user: req.user.id, message: null })
+        : null;
+
+    if (!attachment) {
+        return res.status(404).json({ message: "File not found, or it was already sent", success: false });
+    }
+
+    await removeAttachmentFiles([attachment]);
+    return res.status(200).json({ success: true });
+}
+
 // used when a chat is deleted: remove the files from ImageKit and their records from the database
 export async function deleteAttachmentsOfMessages(messageIds) {
     const attachments = await attachmentModel.find({ message: { $in: messageIds } });
 
-    await Promise.all(attachments.map((attachment) => deleteFromImageKit(attachment.fileId)));
-    await attachmentModel.deleteMany({ _id: { $in: attachments.map((a) => a._id) } });
+    await removeAttachmentFiles(attachments);
+    await attachmentModel.deleteMany({ _id: { $in: attachments.map((attachment) => attachment._id) } });
 }
