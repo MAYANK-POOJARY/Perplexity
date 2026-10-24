@@ -6,6 +6,7 @@ import attachmentModel from "../models/attachment.model.js";
 import { MAX_FILES } from "../middleware/upload.middleware.js";
 import { toPublicAttachment, deleteAttachmentsOfMessages } from "./attachment.controllers.js";
 import { findRelevantExcerpts } from "../services/rag.service.js";
+import { validateSendPayload } from "../validator/chat.validator.js";
 
 
 export async function getChats(req, res){
@@ -148,13 +149,8 @@ export async function streamMessage(socket, { message, chatId, tempId, regenerat
     const fail = (text) =>
         socket.emit("chat:error", { tempId, chatId: chat?._id ?? chatId, message: text });
 
-    if (!regenerate && (typeof message !== "string" || !message.trim())) return fail("Message is required");
-    if (regenerate && !chatId) return fail("Chat not found");
-    if (
-        !Array.isArray(attachmentIds) ||
-        attachmentIds.length > MAX_FILES ||
-        !attachmentIds.every((id) => mongoose.isValidObjectId(id))
-    ) return fail("Invalid attachments");
+    const problem = validateSendPayload({ message, chatId, regenerate, attachmentIds });
+    if (problem) return fail(problem);
     if (isRateLimited(userId)) return fail("You're sending messages too fast. Please slow down.");
 
     // if the browser disconnects mid-answer, stop the AI call instead of wasting tokens

@@ -1,4 +1,5 @@
 import Attachment from './Attachment';
+import { memo } from 'react';
 
 const UserMessage = ({ content, attachments = [] }) => {
   return (
@@ -20,4 +21,4 @@ const UserMessage = ({ content, attachments = [] }) => {
   );
 };
 
-export default UserMessage;
+export default memo(UserMessage);

@@ -42,9 +42,29 @@ export const useChat = () => {
     
     const currentChat = currentChatId ? chats[currentChatId] : null;
 
-    // ---- listen to everything the server streams back (registered once) ----
+        // ---- listen to everything the server streams back (registered once) ----
     useEffect(() => {
         const socket = initializeSocketConnection();
+
+        // Tokens arrive many times per second. Re-drawing the answer for every single one is wasteful,
+        // so they wait here and are sent to Redux together, at most every 50 ms (20 times per second).
+        const FLUSH_EVERY_MS = 50;
+        let waiting = {};      // chatId -> text that arrived but is not on screen yet
+        let timer = null;
+
+        const flushTokens = () => {
+            if (timer !== null) {
+                clearTimeout(timer);
+                timer = null;
+            }
+            const batch = waiting;
+            waiting = {};
+
+            for (const chatId in batch) {
+                dispatch(appendToken({ chatId, token: batch[chatId] }));
+            }
+            dispatch(setThinking(false));   // the first words are on screen: hide the bouncing dots
+        };
 
         const finish = () => {
             dispatch(setThinking(false));
@@ -55,6 +75,8 @@ export const useChat = () => {
         const abandon = (tempId, text) => {
             const pending = pendingRef.current[tempId];
             if (!pending) return;
+
+            flushTokens();   // whatever was already written must be on screen before we decide what to keep
 
             if (pending.created) {
                 dispatch(failStreaming({ chatId: pending.chatId }));
@@ -100,23 +122,15 @@ export const useChat = () => {
             dispatch(setCurrentChatId(chat._id));
         };
 
-        // one small piece of the answer
+        // one small piece of the answer: park it, and make sure a flush is coming soon
         const onToken = ({ chatId, token }) => {
-            dispatch(setThinking(false));   // first token: hide the bouncing dots
-            dispatch(appendToken({ chatId, token }));
+            waiting[chatId] = (waiting[chatId] ?? "") + token;
+            if (timer === null) timer = setTimeout(flushTokens, FLUSH_EVERY_MS);
         };
 
         const onDone = ({ tempId, chatId, aiMessage }) => {
+            flushTokens();
             dispatch(finishStreaming({ chatId, content: aiMessage.content }));
-            delete pendingRef.current[tempId];
-            finish();
-        };
-
-        // the user pressed Stop: keep the partial answer (or remove the empty bubble) and unlock the input
-        const onStopped = ({ tempId }) => {
-            const pending = pendingRef.current[tempId];
-            if (!pending) return;
-            if (pending.created) dispatch(failStreaming({ chatId: pending.chatId }));
             delete pendingRef.current[tempId];
             finish();
         };
@@ -124,6 +138,16 @@ export const useChat = () => {
         const onTitle = ({ chatId, title }) => dispatch(updateChatTitle({ chatId, title }));
 
         const onSources = ({ chatId, sources }) => dispatch(setSources({ chatId, sources }));
+
+        // the user pressed Stop: keep the partial answer (or remove the empty bubble) and unlock the input
+        const onStopped = ({ tempId }) => {
+            flushTokens();
+            const pending = pendingRef.current[tempId];
+            if (!pending) return;
+            if (pending.created) dispatch(failStreaming({ chatId: pending.chatId }));
+            delete pendingRef.current[tempId];
+            finish();
+        };
 
         const onError = ({ tempId, message }) => abandon(tempId, message || "Something went wrong.");
 
@@ -136,21 +160,23 @@ export const useChat = () => {
         socket.on("chat:token", onToken);
         socket.on("chat:done", onDone);
         socket.on("chat:title", onTitle);
+        socket.on("chat:sources", onSources);
+        socket.on("chat:stopped", onStopped);
         socket.on("chat:error", onError);
         socket.on("disconnect", onDisconnect);
-        socket.on("chat:stopped", onStopped);
-        socket.on("chat:sources", onSources);
 
-        // cleanup: remove our listeners so they never get registered twice
+        // cleanup: remove our listeners so they never get registered twice, and drop anything still waiting
         return () => {
+            clearTimeout(timer);
+            waiting = {};
             socket.off("chat:created", onCreated);
             socket.off("chat:token", onToken);
             socket.off("chat:done", onDone);
             socket.off("chat:title", onTitle);
+            socket.off("chat:sources", onSources);
+            socket.off("chat:stopped", onStopped);
             socket.off("chat:error", onError);
             socket.off("disconnect", onDisconnect);
-            socket.off("chat:stopped", onStopped);
-            socket.off("chat:sources", onSources);
         };
     }, [dispatch]);
 

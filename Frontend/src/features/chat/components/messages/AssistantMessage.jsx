@@ -3,10 +3,11 @@ import remarkGfm from 'remark-gfm';
 import { Sparkles } from 'lucide-react';
 import SourceList from './SourceList';
 import MessageActions from './MessageActions';
+import { memo } from 'react';
 
 const AssistantMessage = ({ message, isLast = false, onRegenerate }) => {
   const { content, sources } = message;
-
+  console.count(`AssistantMessage ${message.id}`);
   return (
     <div className="flex items-start gap-3.5 w-full my-4">
       {/* Sparkle Avatar Badge */}
@@ -44,4 +45,4 @@ const AssistantMessage = ({ message, isLast = false, onRegenerate }) => {
   );
 };
 
-export default AssistantMessage;
+export default memo(AssistantMessage);

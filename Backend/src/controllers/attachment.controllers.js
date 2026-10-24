@@ -10,6 +10,7 @@ import { chunkPages, embedTexts, vectorToBuffer } from "../services/rag.service.
 const MAX_FULL_TEXT_CHARS = 30000;   // a document up to this size is given to the AI whole. Longer ones are searched.
 const MAX_PDF_PAGES = 300;           // the most pages we read from one PDF
 const MAX_CHUNKS = 1000;             // the most pieces we index from one document
+const MAX_UNSENT_ATTACHMENTS = 2;   // files one user can have uploaded but not sent yet
 
 const IMAGE_EXTENSIONS = {
     "image/png": ".png",
@@ -123,6 +124,15 @@ export async function uploadAttachments(req, res) {
 
     if (files.length === 0) {
         return res.status(400).json({ message: "No files were uploaded", success: false });
+    }
+
+    // a user can only have so many files waiting at once (unsent files are deleted after 2 hours anyway)
+    const waiting = await attachmentModel.countDocuments({ user: req.user.id, message: null });
+    if (waiting + files.length > MAX_UNSENT_ATTACHMENTS) {
+        return res.status(429).json({
+            message: "You have too many files waiting to be sent. Send your message or remove some files first.",
+            success: false,
+        });
     }
 
     // 1) check and read EVERY file before anything is uploaded

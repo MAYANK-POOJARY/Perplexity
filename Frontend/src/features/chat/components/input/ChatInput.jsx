@@ -116,6 +116,7 @@ const ChatInput = ({ onSendMessage, onStop, disabled = false }) => {
             {/* Text Input */}
             <input
               type="text"
+              maxLength={4000}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
