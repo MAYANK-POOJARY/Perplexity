@@ -7,7 +7,7 @@ const ThreadGroup = ({ group, activeThreadId, onSelectThread, onDeleteThread }) 
   return (
     <div className="flex flex-col mb-4">
       {/* Category Heading */}
-      <h3 className="text-[11px] font-semibold tracking-wider text-[#526177] uppercase px-3 mb-1.5 select-none">
+      <h3 className="text-[11px] font-semibold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase px-3 mb-1.5 select-none font-mono">
         {group.category}
       </h3>
 

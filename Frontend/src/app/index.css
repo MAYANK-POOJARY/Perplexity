@@ -1,1 +1,129 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================================================================
+   CENTRALIZED THEME PALETTES (Change all light/dark colors here)
+   ========================================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* --- LIGHT MODE PALETTE --- */
+  --color-canvas: #f8fafc;              /* Main page background */
+  --color-canvas-text: #0f172a;         /* Main page text */
+  --color-canvas-text-muted: #64748b;   /* Secondary muted text */
+
+  --color-sidebar-bg: #f8fafc;          /* Sidebar background */
+  --color-sidebar-border: #e2e8f0;      /* Sidebar border */
+
+  --color-surface: #ffffff;             /* Cards, headers, containers */
+  --color-surface-hover: #f1f5f9;       /* Hover state on cards */
+  --color-border: #e2e8f0;              /* Standard hairline borders */
+
+  --color-input-bg: #ffffff;            /* Chat input box background */
+  --color-input-border: #e2e8f0;        /* Chat input box border */
+  --color-input-focus-border: #6366f1;  /* Chat input focused border */
+
+  --color-user-bubble-bg: #f1f5f9;      /* User message bubble background */
+  --color-user-bubble-text: #0f172a;    /* User message bubble text */
+  --color-user-bubble-border: #e2e8f0;  /* User message bubble border */
+
+  --color-primary: #4f46e5;             /* Primary action buttons */
+  --color-primary-hover: #4338ca;
+  --color-primary-text: #ffffff;
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  /* --- DARK MODE PALETTE --- */
+  --color-canvas: #0b0d13;              /* Main page background */
+  --color-canvas-text: #f1f5f9;         /* Main page text */
+  --color-canvas-text-muted: #94a3b8;   /* Secondary muted text */
+
+  --color-sidebar-bg: #0c0e14;          /* Sidebar background */
+  --color-sidebar-border: #1e2330;      /* Sidebar border */
+
+  --color-surface: #12141f;             /* Cards, headers, containers */
+  --color-surface-hover: #1c202f;       /* Hover state on cards */
+  --color-border: #1e2330;              /* Standard hairline borders */
+
+  --color-input-bg: #131622;            /* Chat input box background */
+  --color-input-border: #23293d;        /* Chat input box border */
+  --color-input-focus-border: #6366f1;  /* Chat input focused border */
+
+  --color-user-bubble-bg: #1e2333;      /* User message bubble background */
+  --color-user-bubble-text: #f1f5f9;    /* User message bubble text */
+  --color-user-bubble-border: #2c3349;  /* User message bubble border */
+
+  --color-primary: #6366f1;             /* Primary action buttons */
+  --color-primary-hover: #4f46e5;
+  --color-primary-text: #ffffff;
+}
+
+/* Base element overrides */
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-canvas-text);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+}
+
+/* Custom scrollbars for clean cognitive minimalism */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.15);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+/* Subtle Micro-Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.04);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
