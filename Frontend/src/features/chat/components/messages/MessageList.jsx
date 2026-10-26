@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import UserMessage from './UserMessage';
 import AssistantMessage from './AssistantMessage';
 import { Sparkles } from 'lucide-react';
-import AxiomLogo from '../header/AxiomLogo';
+import PerplexityLogo from '../header/PerplexityLogo';
 
 const MessageList = ({ messages = [], isThinking = false, onRegenerate }) => {
   const bottomRef = useRef(null);
@@ -35,12 +35,12 @@ const MessageList = ({ messages = [], isThinking = false, onRegenerate }) => {
       {isThinking && (
         <div className="flex items-start gap-3.5 w-full my-6 animate-fade-in select-none">
           <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-            <AxiomLogo className="w-4 h-4" isIconOnly />
+            <PerplexityLogo className="w-4 h-4" isIconOnly />
           </div>
           <div className="flex flex-col gap-1.5 pt-1.5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-zinc-500 dark:text-zinc-400">
-                Axiom is synthesizing...
+                Perplexity is synthesizing...
               </span>
             </div>
             <div className="flex items-center gap-1.5 pt-1">

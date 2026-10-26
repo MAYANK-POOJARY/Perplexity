@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router';
-import AxiomLogo from '../../chat/components/header/AxiomLogo';
+import PerplexityLogo from '../../chat/components/header/PerplexityLogo';
 
 const Protected = ({ children }) => {
   const user = useSelector((state) => state.auth.user);
@@ -11,10 +11,10 @@ const Protected = ({ children }) => {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#f8fafc] dark:bg-[#0b0d13] transition-colors select-none">
         <div className="relative animate-pulse-glow">
-          <AxiomLogo className="w-12 h-12" isIconOnly />
+          <PerplexityLogo className="w-12 h-12" isIconOnly />
         </div>
         <span className="mt-4 text-xs font-mono text-zinc-400 dark:text-zinc-500 tracking-wider uppercase">
-          Initializing Axiom...
+          Initializing Perplexity...
         </span>
       </div>
     );

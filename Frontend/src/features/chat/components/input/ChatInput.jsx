@@ -143,7 +143,7 @@ const ChatInput = ({ onSendMessage, onStop, disabled = false, initialPrompt = ''
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={attachments.length > 0 ? 'Ask a question about your files...' : 'Ask Axiom anything...'}
+              placeholder={attachments.length > 0 ? 'Ask a question about your files...' : 'Ask Perplexity anything...'}
               disabled={disabled}
               className="flex-1 bg-transparent px-2 py-1.5 text-[14.5px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none resize-none leading-relaxed min-h-[38px] max-h-[160px] overflow-y-auto"
             />
@@ -179,7 +179,7 @@ const ChatInput = ({ onSendMessage, onStop, disabled = false, initialPrompt = ''
 
         {/* Subtle Disclaimer Note */}
         <p className="text-[11px] text-zinc-400 dark:text-zinc-500 text-center mt-2 tracking-tight select-none font-sans">
-          Axiom may occasionally produce inaccurate information. Verify critical references.
+          Perplexity may occasionally produce inaccurate information. Verify critical references.
         </p>
       </div>
     </div>

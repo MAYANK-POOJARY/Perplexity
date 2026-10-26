@@ -1,6 +1,6 @@
 import React from 'react';
 import { Compass, Cpu, Search, Sparkles, BookOpen } from 'lucide-react';
-import AxiomLogo from './AxiomLogo';
+import PerplexityLogo from './PerplexityLogo';
 
 const STARTER_PROMPTS = [
   {
@@ -32,7 +32,7 @@ const HeroGreeting = ({ onSelectPrompt }) => {
       <div className="relative mb-5 group">
         <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-indigo-500/30 to-violet-500/30 blur-lg opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="relative w-14 h-14 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-          <AxiomLogo className="w-8 h-8" isIconOnly />
+          <PerplexityLogo className="w-8 h-8" isIconOnly />
         </div>
       </div>
 

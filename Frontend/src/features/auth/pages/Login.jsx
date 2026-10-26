@@ -4,7 +4,7 @@ import { useAuth } from '../hook/useAuth';
 import { useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, ArrowRight, Sun, Moon, Loader2 } from 'lucide-react';
-import AxiomLogo from '../../chat/components/header/AxiomLogo';
+import PerplexityLogo from '../../chat/components/header/PerplexityLogo';
 import { useTheme } from '../../../lib/theme';
 
 const Login = () => {
@@ -45,7 +45,7 @@ const Login = () => {
           className="p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 hover:bg-white dark:hover:bg-zinc-800 backdrop-blur-md text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-all cursor-pointer shadow-xs"
           title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}
         >
-          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+          {isDark ? <Moon className="w-4 h-4 text-amber-400" /> : <Sun className="w-4 h-4 text-indigo-500" />}
         </button>
       </div>
 
@@ -54,10 +54,10 @@ const Login = () => {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="mb-4">
-            <AxiomLogo className="w-10 h-10" isIconOnly />
+            <PerplexityLogo className="w-10 h-10" isIconOnly />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Welcome back to Axiom
+            Welcome back to Perplexity
           </h1>
           <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
             Sign in to continue your research and synthesis.

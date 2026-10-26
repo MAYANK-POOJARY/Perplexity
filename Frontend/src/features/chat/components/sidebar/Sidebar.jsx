@@ -1,5 +1,5 @@
 import React from 'react';
-import AxiomLogo from '../header/AxiomLogo';
+import PerplexityLogo from '../header/PerplexityLogo';
 import UserProfile from './UserProfile';
 import NewThreadButton from './NewThreadButton';
 import ThreadGroup from './ThreadGroup';
@@ -34,7 +34,7 @@ const Sidebar = ({
         <div className="flex flex-col gap-3.5">
           {/* Header Brand */}
           <div className="px-2 pt-1 pb-0.5 flex items-center justify-between">
-            <AxiomLogo />
+            <PerplexityLogo />
           </div>
 
           <UserProfile />

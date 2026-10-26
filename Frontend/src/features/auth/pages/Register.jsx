@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router';
 import { useAuth } from '../hook/useAuth';
 import { useSelector } from 'react-redux';
 import { Eye, EyeOff, ArrowRight, Sun, Moon, Loader2 } from 'lucide-react';
-import AxiomLogo from '../../chat/components/header/AxiomLogo';
+import PerplexityLogo from '../../chat/components/header/PerplexityLogo';
 import { useTheme } from '../../../lib/theme';
 
 const Register = () => {
@@ -52,10 +52,10 @@ const Register = () => {
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="mb-4">
-            <AxiomLogo className="w-10 h-10" isIconOnly />
+            <PerplexityLogo className="w-10 h-10" isIconOnly />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Create your Axiom account
+            Create your Perplexity account
           </h1>
           <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
             Join the research workspace for synthesis and inquiry.

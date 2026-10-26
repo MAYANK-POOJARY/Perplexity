@@ -23,7 +23,7 @@ const UserProfile = () => {
             </span>
           </div>
           <span className="text-[11px] text-zinc-500 dark:text-zinc-400 tracking-tight truncate">
-            {user?.email || 'axiom.ai'}
+            {user?.email || 'Perplexity.ai'}
           </span>
         </div>
       </div>

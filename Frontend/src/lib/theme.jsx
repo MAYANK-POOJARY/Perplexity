@@ -5,7 +5,7 @@ const ThemeContext = createContext();
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('axiom-theme');
+      const savedTheme = localStorage.getItem('Perplexity-theme');
       if (savedTheme === 'light' || savedTheme === 'dark') {
         return savedTheme;
       }
@@ -28,7 +28,7 @@ export const ThemeProvider = ({ children }) => {
       root.classList.remove('dark');
     }
     try {
-      localStorage.setItem('axiom-theme', theme);
+      localStorage.setItem('Perplexity-theme', theme);
     } catch (e) {}
   }, [theme]);
 
@@ -44,7 +44,7 @@ export const ThemeProvider = ({ children }) => {
         root.classList.remove('dark');
       }
       try {
-        localStorage.setItem('axiom-theme', next);
+        localStorage.setItem('Perplexity-theme', next);
       } catch (e) {}
       return next;
     });

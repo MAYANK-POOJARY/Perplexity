@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { Sparkles, Copy, Check, ChevronDown, ChevronRight, Terminal } from 'lucide-react';
 import SourceList from './SourceList';
 import MessageActions from './MessageActions';
-import AxiomLogo from '../header/AxiomLogo';
+import PerplexityLogo from '../header/PerplexityLogo';
 
 // Custom Pre/Code component with Copy Code button
 const PreBlock = ({ children, ...props }) => {
@@ -79,17 +79,17 @@ const AssistantMessage = ({ message, isLast = false, onRegenerate }) => {
 
   return (
     <div className="flex items-start gap-3.5 w-full my-6 animate-fade-in">
-      {/* Axiom Brand Badge Avatar (Circular) */}
+      {/* Perplexity Brand Badge Avatar (Circular) */}
       <div className="shrink-0 mt-1 select-none">
-        <AxiomLogo className="w-7 h-7 rounded-full" isIconOnly />
+        <PerplexityLogo className="w-7 h-7 rounded-full" isIconOnly />
       </div>
 
       {/* Content Stream */}
       <div className="flex-1 min-w-0 text-zinc-800 dark:text-zinc-200 text-[14px] md:text-[14.5px] leading-relaxed">
         {/* Model & Status Header */}
         <div className="flex items-center gap-2 mb-2 select-none">
-          <span className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 tracking-tight">
-            Axiom
+          <span className="font-semibold text-medium text-zinc-900 dark:text-zinc-100 tracking-tight">
+            Perplexity
           </span>
           {sources?.length > 0 && (
             <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300 border border-emerald-500/20">

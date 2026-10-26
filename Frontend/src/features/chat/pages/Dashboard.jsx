@@ -4,7 +4,7 @@ import Sidebar from "../components/sidebar/Sidebar";
 import HeroGreeting from "../components/header/HeroGreeting";
 import MessageList from "../components/messages/MessageList";
 import ChatInput from "../components/input/ChatInput";
-import AxiomLogo from "../components/header/AxiomLogo";
+import PerplexityLogo from "../components/header/PerplexityLogo";
 import { useChat } from "../hook/useChat";
 
 const Dashboard = () => {
@@ -86,7 +86,7 @@ const Dashboard = () => {
             {/* Breadcrumb / Title */}
             <div className="flex items-center gap-2 truncate">
               <div className="md:hidden">
-                <AxiomLogo className="w-6 h-6" isIconOnly />
+                <PerplexityLogo className="w-6 h-6" isIconOnly />
               </div>
 
               {threadTitle ? (
@@ -96,7 +96,7 @@ const Dashboard = () => {
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
-                    Axiom
+                    Perplexity
                   </span>
                   <span className="text-zinc-400 dark:text-zinc-600">/</span>
                   <span className="text-xs text-zinc-500 dark:text-zinc-400">
