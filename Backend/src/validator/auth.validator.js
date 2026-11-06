@@ -4,7 +4,9 @@ export function validate(req, res, next){
     const errors = validationResult(req);
 
     if(!errors.isEmpty()){
-        return res.status(400).json({errors: errors.array()});
+        const list = errors.array();
+        // "message" is what the frontend shows (the first problem); "errors" keeps the full list
+        return res.status(400).json({ success: false, message: list[0].msg, errors: list });
     }
 
     next();
@@ -24,7 +26,6 @@ export const registerValidator = [
         .isEmail().withMessage("Please provide a valid Email Id"),
 
     body("password")
-        .trim()
         .notEmpty().withMessage("Password is required")
         .isLength({min:6}).withMessage("Password must be of atleast 6 characters"),
 

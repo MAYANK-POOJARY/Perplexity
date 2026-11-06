@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, Navigate } from 'react-router';
 import { useAuth } from '../hook/useAuth';
 import { useSelector } from 'react-redux';
-import { Eye, EyeOff, ArrowRight, Sun, Moon, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Sun, Moon, Loader2, MailCheck } from 'lucide-react';
 import PerplexityLogo from '../../chat/components/header/PerplexityLogo';
 import { useTheme } from '../../../lib/theme';
 
@@ -11,25 +11,52 @@ const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState(null);   // set only after a SUCCESSFUL registration
 
-  const { handleRegister } = useAuth();
-  const navigate = useNavigate();
+  const { handleRegister, clearError } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
   const user = useSelector((state) => state.auth.user);
   const loading = useSelector((state) => state.auth.loading);
   const authError = useSelector((state) => state.auth.error);
 
+  // start with a clean slate: an old error from another page must not show up here
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
   const submitForm = async (e) => {
     e.preventDefault();
-    await handleRegister({ username, email, password });
-    navigate('/login');
+    const trimmedEmail = email.trim();
+    const ok = await handleRegister({ username: username.trim(), email: trimmedEmail, password });
+    // success -> show the "check your email" message. Failure -> stay here, keep the form, show the error.
+    if (ok) setRegisteredEmail(trimmedEmail);
   };
 
   if (!loading && user) {
     return <Navigate to="/" replace />;
   }
 
+  if (registeredEmail) {
+    return (
+      <section className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-[#f8fafc] text-zinc-900 dark:bg-[#0b0d13] dark:text-zinc-100 transition-colors duration-200">
+        <div className="relative w-full max-w-md rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white/80 dark:bg-[#12141f]/80 p-8 sm:p-10 shadow-xl text-center">
+          <MailCheck className="w-10 h-10 mx-auto mb-4 text-indigo-500" />
+          <h1 className="text-2xl font-bold tracking-tight">Check your email</h1>
+          <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+            We sent a verification link to <span className="font-semibold">{registeredEmail}</span>.
+            Click it to activate your account, then sign in.
+          </p>
+          <Link
+            to="/login"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm py-2.5 px-5 transition-colors"
+          >
+            Go to sign in
+          </Link>
+        </div>
+      </section>
+    );
+  }
   return (
     <section className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 bg-[#f8fafc] text-zinc-900 dark:bg-[#0b0d13] dark:text-zinc-100 transition-colors duration-200 overflow-hidden selection:bg-indigo-500/25">
       {/* Ambient background glow spheres */}
@@ -81,6 +108,10 @@ const Register = () => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Your username"
               required
+              minLength={3}
+              maxLength={30}
+              pattern="[a-zA-Z0-9_]+"
+              title="3 to 30 characters: letters, numbers and underscores only (no spaces)"
               className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70 px-3.5 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-3 focus:ring-indigo-500/15"
             />
           </div>
@@ -112,6 +143,7 @@ const Register = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a strong password"
                 required
+                minLength={6}
                 className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70 px-3.5 py-2.5 pr-10 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-3 focus:ring-indigo-500/15"
               />
               <button

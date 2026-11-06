@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, Navigate } from 'react-router';
 import { useAuth } from '../hook/useAuth';
 import { useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
@@ -9,8 +9,7 @@ import { useTheme } from '../../../lib/theme';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const { handleLogin } = useAuth();
-  const navigate = useNavigate();
+  const { handleLogin, clearError } = useAuth();
   const { isDark, toggleTheme } = useTheme();
 
   const {
@@ -23,9 +22,15 @@ const Login = () => {
   const loading = useSelector((state) => state.auth.loading);
   const authError = useSelector((state) => state.auth.error);
 
+  // start with a clean slate: an old error from another page must not show up here
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // No navigate() here. When the login works, `user` is set and the <Navigate> below moves us to "/".
+  // When it fails we stay on this page, with the form still filled in, and the error is shown.
   const submitForm = async (values) => {
     await handleLogin(values);
-    navigate('/');
   };
 
   if (!loading && user) {

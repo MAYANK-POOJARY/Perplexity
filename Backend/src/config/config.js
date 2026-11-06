@@ -36,10 +36,6 @@ if(!process.env.TAVILY_API_KEY){
    throw new Error("TAVILY_API_KEY is not defined in environment variables")
 }
 
-if(!process.env.IS_PRODUCTION){
-   throw new Error("IS_PRODUCTION is not defined in environment variables")
-}
-
 if(!process.env.IMAGEKIT_PRIVATE_KEY){
    throw new Error("IMAGEKIT_PRIVATE_KEY is not defined in environment variables")
 }
@@ -59,11 +55,11 @@ const config = {
     GOOGLE_REFRESH_TOKEN : process.env.GOOGLE_REFRESH_TOKEN,
     GOOGLE_USER : process.env.GOOGLE_USER,
     TAVILY_API_KEY : process.env.TAVILY_API_KEY,
-    CLIENT_URL : process.env.CLIENT_URL || "http://localhost:5173",
-    SERVER_URL : process.env.SERVER_URL || "http://localhost:3000",
-    IS_PRODUCTION : process.env.NODE_ENV === "production",
     IMAGEKIT_PRIVATE_KEY : process.env.IMAGEKIT_PRIVATE_KEY,
     IMAGEKIT_URL_ENDPOINT : process.env.IMAGEKIT_URL_ENDPOINT,
+    CLIENT_URL : process.env.CLIENT_URL || (IS_PRODUCTION ? SERVER_URL : "http://localhost:5173"),
+    SERVER_URL : process.env.SERVER_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000",
+    IS_PRODUCTION : process.env.NODE_ENV === "production",
 }
 
 export default config;

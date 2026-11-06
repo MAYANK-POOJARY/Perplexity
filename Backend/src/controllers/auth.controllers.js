@@ -14,16 +14,23 @@ const cookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, same as the JWT
 };
 
+// an unverified account may ask for a new verification email, but not more than once per minute
+const RESEND_COOLDOWN_MS = 60 * 1000;
+
 export const userRegisterController = async (req, res) => {
   const { username, password } = req.body;
   const email = req.body.email.toLowerCase();
 
-  // finding if the user is present based on their email or username
-  const isUserAlreadyExists = await userModel.findOne({
-    $or: [{ username }, { email }],
-  });
+  // every account that already uses this email OR this username
+  const matches = await userModel.find({ $or: [{ username }, { email }] });
 
-  if (isUserAlreadyExists) {
+  // the account (if any) that belongs to THIS email address
+  const sameEmailUser = matches.find((u) => u.email === email);
+  // any other account that already has the username the person is asking for
+  const usernameTakenByOther = matches.some((u) => u !== sameEmailUser);
+
+  // refuse when: the email is already verified, or the username belongs to someone else
+  if (usernameTakenByOther || sameEmailUser?.verified) {
     return res.status(400).json({
       message: "User with this email or username already exists.",
       success: false,
@@ -31,8 +38,29 @@ export const userRegisterController = async (req, res) => {
     });
   }
 
-  // putting the data of the user onto the database
-  const user = await userModel.create({ username, email, password });
+  let user;
+
+  if (sameEmailUser) {
+    // The email is registered but was NEVER verified (lost email, expired link, or someone else
+    // registered this address first). Let the person start again instead of locking them out.
+    if (Date.now() - sameEmailUser.updatedAt.getTime() < RESEND_COOLDOWN_MS) {
+      return res.status(429).json({
+        message: "A verification email was just sent. Please wait a minute before trying again.",
+        success: false,
+        err: "Too many requests",
+      });
+    }
+
+    // The newest sign-up replaces the old details. This is what stops a stranger from "pre-registering"
+    // your email with a password they know: when you sign up, their password is overwritten by yours.
+    sameEmailUser.username = username;
+    sameEmailUser.password = password;   // the model hashes it before saving
+    await sameEmailUser.save();
+    user = sameEmailUser;
+  } else {
+    // putting the data of the user onto the database
+    user = await userModel.create({ username, email, password });
+  }
 
   const emailVerificationToken = jwt.sign(
     {
@@ -50,7 +78,7 @@ export const userRegisterController = async (req, res) => {
       html: emailHtml({ username, emailVerificationToken }),
     });
   } catch (error) {
-    // if the email can't be sent, remove the account so the user can simply try again
+    // if the email can't be sent, remove the (unverified) account so the user can simply try again
     await userModel.findByIdAndDelete(user._id);
     console.error("Verification email failed:", error);
 
@@ -96,8 +124,7 @@ export const userLoginController = async (req, res) => {
   // checking if the user is verified before using the services
   if (!user.verified) {
     return res.status(403).json({
-      message:
-        "Please verify your email before logging in. Check your inbox for the link.",
+      message: "Please verify your email before logging in. Check your inbox for the link, or register again to get a new one.",
       success: false,
       err: "Email not verified",
     });

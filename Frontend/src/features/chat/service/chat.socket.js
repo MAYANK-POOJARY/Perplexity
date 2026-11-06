@@ -5,7 +5,8 @@ let socket;
 
 export const initializeSocketConnection = () => {
     if (!socket) {
-        socket = io(API_URL, {
+        // API_URL is "" in production: passing undefined makes Socket.IO use the current page address
+        socket = io(API_URL || undefined, {
             withCredentials: true,
         });
 
