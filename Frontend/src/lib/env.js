@@ -4,9 +4,8 @@
 //  - VITE_API_URL  -> overrides both, if you ever host the backend somewhere else
 const fromEnv = import.meta.env.VITE_API_URL;
 
-export const API_URL =
-    fromEnv !== undefined && fromEnv !== ""
-        ? fromEnv.replace(/\/+$/, "")
-        : import.meta.env.PROD
-            ? ""
-            : "http://localhost:3000";
+export const API_URL = fromEnv
+    ? fromEnv.replace(/\/+$/, "")
+    : import.meta.env.PROD
+        ? ""
+        : "http://localhost:3000";
