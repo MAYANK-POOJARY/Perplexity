@@ -145,6 +145,8 @@ const Register = () => {
                 placeholder="Create a strong password"
                 required
                 minLength={6}
+                pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*(),.?&quot;:{}|<>]).+"
+                title="Password must contain at least one uppercase letter, lowercase letter, number, and special character."
                 className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70 px-3.5 py-2.5 pr-10 text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all focus:border-indigo-500 dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-zinc-900 focus:ring-3 focus:ring-indigo-500/15"
               />
               <button
@@ -161,7 +163,7 @@ const Register = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-sm py-2.5 px-4 shadow-md shadow-indigo-500/20 active:scale-[0.985] transition-all duration-150 cursor-pointer disabled:opacity-60"
+            className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-sm py-2.5 px-4 shadow-md shadow-indigo-500/20 active:scale-[0.985] transition-all duration-150 cursor-pointer disabled:opacity-60"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
