@@ -7,6 +7,7 @@ import cors from "cors";
 import helmet from "helmet";
 import path from "path"
 import config from "./config/config.js";
+import passport from "./config/passport.js";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use(cors({
     methods: ["GET", "POST", "PUT", "DELETE"],
   }),
 );
+app.use(passport.initialize());
 
 app.use("/api/auth", authRouter);
 app.use("/api/chats", chatRouter);

@@ -60,6 +60,7 @@ const config = {
     CLIENT_URL : process.env.CLIENT_URL || (IS_PRODUCTION ? SERVER_URL : "http://localhost:5173"),
     SERVER_URL : process.env.SERVER_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000",
     IS_PRODUCTION : process.env.NODE_ENV === "production",
+    GOOGLE_CALLBACK_URL : process.env.GOOGLE_CALLBACK_URL || `${process.env.SERVER_URL || "http://localhost:3000"}/api/auth/google/callback`,
 }
 
 export default config;

@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { Eye, EyeOff, ArrowRight, Sun, Moon, Loader2, MailCheck } from 'lucide-react';
 import PerplexityLogo from '../../chat/components/header/PerplexityLogo';
 import { useTheme } from '../../../lib/theme';
+import GoogleButton from '../components/GoogleButton';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -172,6 +173,8 @@ const Register = () => {
             )}
           </button>
         </form>
+
+        <GoogleButton />
 
         {/* Footer Link */}
         <p className="mt-6 text-center text-xs text-zinc-500 dark:text-zinc-400">

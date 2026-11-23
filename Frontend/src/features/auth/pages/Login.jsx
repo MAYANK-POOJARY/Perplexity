@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router';
+import { Link, Navigate, useSearchParams } from 'react-router';
 import { useAuth } from '../hook/useAuth';
 import { useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, ArrowRight, Sun, Moon, Loader2 } from 'lucide-react';
 import PerplexityLogo from '../../chat/components/header/PerplexityLogo';
 import { useTheme } from '../../../lib/theme';
+import GoogleButton from '../components/GoogleButton';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const { handleLogin, clearError } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const [searchParams] = useSearchParams();
+  const googleFailed = searchParams.get('error') === 'google';
 
   const {
     register,
@@ -70,9 +73,9 @@ const Login = () => {
         </div>
 
         {/* Login Form */}
-        {authError && (
+        {(authError || googleFailed) && (
           <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-500 text-center font-medium">
-            {authError}
+            {authError || 'Google sign-in failed. Please try again.'}
           </div>
         )}
 
@@ -146,6 +149,8 @@ const Login = () => {
             )}
           </button>
         </form>
+
+        <GoogleButton />
 
         {/* Footer Link */}
         <p className="mt-6 text-center text-xs text-zinc-500 dark:text-zinc-400">

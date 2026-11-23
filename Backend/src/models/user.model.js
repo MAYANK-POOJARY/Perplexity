@@ -17,13 +17,20 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        required: function (){ 
+            return !this.googleId 
+        },
         minlength: 6,
         select: false
     },
     verified: {
         type: Boolean,
         default: false
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        spare: true
     }
 },{
     timestamps: true
@@ -31,12 +38,13 @@ const userSchema = new mongoose.Schema({
 
 // before saving the user data it checks if the password is hashed or not
 userSchema.pre("save", async function (){
-    if(!this.isModified('password')) return;
+    if(!this.isModified('password') || !this.password) return;
     this.password = await bcrypt.hash(this.password, 10);
 })
 
 // creating a method for comparing the password
 userSchema.methods.comparePassword = function (candidatePassword){
+    if(!this.password) return false;
     return bcrypt.compare( candidatePassword, this.password)
 } 
 

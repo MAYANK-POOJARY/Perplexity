@@ -3,16 +3,8 @@ import jwt from "jsonwebtoken";
 import { sendEmail } from "../services/mail.service.js";
 import { emailHtml, renderVerificationPage } from "../views/auth.view.js";
 import config from "../config/config.js";
+import { cookieOptions, setAuthCookie } from "../services/token.service.js";
 
-// httpOnly -> JavaScript in the browser can't read the token (protects against XSS)
-// secure   -> only sent over HTTPS in production
-// sameSite -> "none" is needed in production when frontend and backend are on different domains
-const cookieOptions = {
-  httpOnly: true,
-  secure: config.IS_PRODUCTION,
-  sameSite: "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days, same as the JWT
-};
 
 // an unverified account may ask for a new verification email, but not more than once per minute
 const RESEND_COOLDOWN_MS = 60 * 1000;
@@ -130,18 +122,7 @@ export const userLoginController = async (req, res) => {
     });
   }
 
-  // creating a token containing the user data
-  const token = jwt.sign(
-    {
-      id: user._id,
-      username: user.username,
-    },
-    config.JWT_SECRET,
-    { expiresIn: "7d" },
-  );
-
-  // setting the token in the cookies
-  res.cookie("token", token, cookieOptions);
+  setAuthCookie(res, user);
 
   return res.status(200).json({
     message: "Login Successful",
@@ -243,3 +224,11 @@ export async function verifyEmail(req, res) {
     );
   }
 }
+
+export const googleCallbackController = (req, res) => {
+  // passport put the user on req.user in the verify callback
+  setAuthCookie(res, req.user);
+
+  // back to the frontend; handleGetMe runs on page load and picks up the cookie
+  res.redirect(config.CLIENT_URL);
+};

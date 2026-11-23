@@ -6,12 +6,15 @@ import {
   userRegisterController,
   userLogoutController,
   verifyEmail,
+  googleCallbackController,
 } from "../controllers/auth.controllers.js";
 import {
   loginValidator,
   registerValidator,
 } from "../validator/auth.validator.js";
 import { authUser } from "../middleware/auth.middleware.js";
+import passport from "passport";
+import config from "../config/config.js";
 
 const authRouter = Router();
 
@@ -41,5 +44,25 @@ authRouter.get("/get-me", authUser, getMeController);
 
 // for email verification
 authRouter.get("/verify-email", verifyEmail);
+
+// starts the Google flow: sends the browser to Google's consent screen
+authRouter.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+    prompt: "select_account",
+  }),
+);
+
+// Google sends the user back here
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: `${config.CLIENT_URL}/login?error=google`,
+  }),
+  googleCallbackController,
+);
 
 export default authRouter;
