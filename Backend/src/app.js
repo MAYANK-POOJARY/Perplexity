@@ -11,6 +11,8 @@ import passport from "./config/passport.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 // Files stored in ImageKit are shown with <img>, so the browser must be allowed to load images from there.
 let imageKitOrigin = null;
 try {

@@ -3,6 +3,7 @@ import Register from '../features/auth/pages/Register'
 import Login from '../features/auth/pages/Login'
 import Dashboard from '../features/chat/pages/Dashboard'
 import Protected from '../features/auth/components/Protected'
+import PrivacyPolicy from '../features/legal/PrivacyPolicy'
 
 export const router = createBrowserRouter([
     {
@@ -12,6 +13,10 @@ export const router = createBrowserRouter([
     {
         path: '/register',
         element: <Register />
+    },
+    {
+        path: '/privacy',
+        element: <PrivacyPolicy />
     },
     {
         path: "/",

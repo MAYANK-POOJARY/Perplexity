@@ -2,6 +2,8 @@ import React from 'react';
 import { Sun, Moon, LogOut } from 'lucide-react';
 import { useAuth } from '../../../auth/hook/useAuth';
 import { useTheme } from '../../../../lib/theme';
+import { Link } from 'react-router';
+import { ShieldCheck } from 'lucide-react';
 
 const SidebarFooter = () => {
   const { handleLogout } = useAuth();
@@ -34,12 +36,20 @@ const SidebarFooter = () => {
           }`}
         >
           <span
-            className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 mt-[1px] ml-[1px] ${
+            className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 mt-px ml-px ${
               isDark ? 'translate-x-3.5' : 'translate-x-0'
             }`}
           />
         </div>
       </button>
+
+      <Link
+        to="/privacy"
+        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 transition-colors duration-150"
+      >
+        <ShieldCheck className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+        <span className="font-medium">Privacy Policy</span>
+      </Link>
 
       {/* Logout Button */}
       <button
